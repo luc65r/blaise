@@ -1,7 +1,9 @@
 %{
 #include <stdio.h>
 
-extern int yylex();
+#include "parse.h"
+#include "scan.h"
+
 void yyerror(const char *s) {
     fprintf(stderr, "ERROR: %s\n", s);
 }

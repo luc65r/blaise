@@ -3,7 +3,7 @@
 %}
 
 %option 8bit noyywrap never-interactive nounistd
-%option bison-bridge
+%option warn
 
 %%
 
