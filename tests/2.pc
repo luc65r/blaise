@@ -1,6 +1,7 @@
 PROGRAMME Test
 VARIABLES
     a : entier
-DEBUT
-    a <- a + a
+DÉBUT
+    a ← 12 + 4322156432
+    a <- a + 1
 FIN

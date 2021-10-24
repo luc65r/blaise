@@ -1,4 +1,5 @@
 %{
+#include <gmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -21,6 +22,7 @@ void yyerror(const char *s);
     ASTExpression *expr;
     ASTLvalue lval;
     ASTBinaryOperator op;
+    mpz_t integer;
     char *ident;
     Vec vec;
     int token;
@@ -29,6 +31,7 @@ void yyerror(const char *s);
 %token <token> TOKEN_PROGRAM TOKEN_FUNCTION TOKEN_PROCEDURE TOKEN_VARIABLES TOKEN_BEGIN TOKEN_END
 %token <token> TOKEN_ASSIGNMENT TOKEN_LPAREN TOKEN_RPAREN TOKEN_COMMA TOKEN_COLON
 %token <token> TOKEN_PLUS
+%token <integer> TOKEN_INTEGER_LITTERAL
 %token <ident> TOKEN_IDENTIFIER
 
 %type <prog> program
@@ -39,6 +42,7 @@ void yyerror(const char *s);
 %type <expr> expression
 %type <lval> lvalue
 %type <op> binary_operator
+%type <integer> integer_litteral
 %type <ident> identifier
 
 %left TOKEN_PLUS
@@ -156,7 +160,14 @@ lvalue
     ;
 
 expression
-    : identifier
+    : integer_litteral
+      {
+          $$ = malloc(sizeof *$$);
+          $$->kind = AST_EXPR_INTEGER_LITTERAL;
+          mpz_init_set($$->integer_litteral, $1);
+          mpz_clear($1);
+      }
+    | identifier
       {
           $$ = malloc(sizeof *$$);
           $$->kind = AST_EXPR_VARIABLE;
@@ -186,6 +197,10 @@ argument_sequence
 
 binary_operator
     : TOKEN_PLUS { $$ = AST_OP_ADD; }
+    ;
+
+integer_litteral
+    : TOKEN_INTEGER_LITTERAL
     ;
 
 identifier

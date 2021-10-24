@@ -13,6 +13,7 @@
           flex
           bison
           libunistring
+          gmp
         ];
       };
     });

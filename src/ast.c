@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <gmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -37,6 +38,17 @@ static void ast_dump_expression(ASTExpression *expr
     assert(expr != NULL);
 
     switch (expr->kind) {
+    case AST_EXPR_INTEGER_LITTERAL:
+#if PRETTY
+        mpz_out_str(stdout, 10, expr->integer_litteral);
+#else
+        INDENT(indent_level);
+        printf("integer: ");
+        mpz_out_str(stdout, 10, expr->integer_litteral);
+        printf("\n");
+#endif
+        break;
+
     case AST_EXPR_VARIABLE:
 #if PRETTY
         printf("%s", expr->variable.name);

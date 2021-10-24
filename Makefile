@@ -6,7 +6,7 @@ CFLAGS += -Og -march=native
 CFLAGS += -ggdb
 CFLAGS += -Wall -Wextra
 CFLAGS += -MMD -MP
-LDFLAGS := -lm -lunistring
+LDFLAGS := -lunistring -lgmp
 FLEX := flex
 FFLAGS :=
 BISON := bison

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gmp.h>
 #include <stddef.h>
 
 #include "vec.h"
@@ -25,6 +26,7 @@ struct ASTBinaryExpression {
 };
 
 typedef enum {
+    AST_EXPR_INTEGER_LITTERAL,
     AST_EXPR_VARIABLE,
     AST_EXPR_BINARY_EXPRESSION,
     AST_EXPR_SUBROUTINE_CALL,
@@ -33,6 +35,8 @@ typedef enum {
 struct ASTExpression {
     ASTExpressionKind kind;
     union {
+        mpz_t integer_litteral;
+
         ASTVariable variable;
 
         ASTBinaryExpression binary_expression;

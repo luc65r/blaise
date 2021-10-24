@@ -1,5 +1,6 @@
 %{
 #include <assert.h>
+#include <gmp.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -73,6 +74,11 @@ EACUTE ([eE]|\xc3[\x89\xa9])
 ":" return TOKEN_COLON;
 "+" return TOKEN_PLUS;
 "//"[^\n]*\n
+[0-9]+ {
+    int err = mpz_init_set_str(yylval.integer, yytext, 10);
+    assert(err == 0);
+    return TOKEN_INTEGER_LITTERAL;
+}
 [ \t\n]+ /* TODO: unicode white-space */
 [^ \t\n]+ {
     const uint8_t *s = yytext;
