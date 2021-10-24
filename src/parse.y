@@ -67,7 +67,7 @@ program
 
 subroutine_sequence
     : %empty { $$ = VEC_EMPTY; }
-    | subroutine_sequence subroutine { vec_push(&$1, $2); }
+    | subroutine_sequence subroutine { $$ = $1; vec_push(&$$, $2); }
     ;
 
 subroutine
@@ -94,7 +94,7 @@ subroutine
 
 statement_sequence
     : %empty { $$ = VEC_EMPTY; }
-    | statement_sequence statement { vec_push(&$1, $2); }
+    | statement_sequence statement { $$ = $1; vec_push(&$$, $2); }
     ;
 
 statement
@@ -120,7 +120,8 @@ subroutine_parameter_sequence
           ASTSubroutineParameter *param = malloc(sizeof *param);
           param->kind = AST_PARAM_IN;
           param->decl = $3;
-          vec_push(&$1, param);
+          $$ = $1;
+          vec_push(&$$, param);
       }
     ;
 
@@ -135,7 +136,8 @@ variable_decl_sequence
       {
           ASTVariableDecl *decl = malloc(sizeof *decl);
           *decl = $2;
-          vec_push(&$1, decl);
+          $$ = $1;
+          vec_push(&$$, decl);
       }
     ;
 
@@ -181,7 +183,7 @@ expression
 
 argument_sequence
     : %empty { $$ = VEC_EMPTY; }
-    | argument_sequence TOKEN_COMMA expression { vec_push(&$1, $3); }
+    | argument_sequence TOKEN_COMMA expression { $$ = $1; vec_push(&$$, $3); }
     ;
 
 binary_operator
