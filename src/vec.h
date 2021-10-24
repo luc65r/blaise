@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-#define VEC_EMPTY (Vec){ 0, 0, 0}
+#define VEC_EMPTY (Vec){ 0, 0, 0 }
 
 typedef struct {
     size_t len;
