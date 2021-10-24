@@ -51,8 +51,8 @@ static void ast_pprint_expression(ASTExpression *expr) {
 
 static void ast_pprint_statements(Vec /* ASTStatement */ stmts, size_t indent_level) {
     for (size_t i = 0; i < stmts.len; i++) {
-        ASTExpression *expr;
         ASTStatement *stmt = stmts.elems[i];
+        ASTExpression *expr = stmt->expression;
 
         INDENT(indent_level);
 
@@ -67,7 +67,6 @@ static void ast_pprint_statements(Vec /* ASTStatement */ stmts, size_t indent_le
             [[fallthrough]];
 
         case AST_STMT_EXPRESSION:
-            expr = stmt->expression;
             ast_pprint_expression(expr);
             printf("\n");
             break;
