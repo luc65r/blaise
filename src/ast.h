@@ -118,4 +118,4 @@ typedef struct {
     Vec /* ASTStatement */ statements;
 } ASTProgram;
 
-void ast_pretty_print(ASTProgram *ast);
+void ast_dump(ASTProgram *ast);

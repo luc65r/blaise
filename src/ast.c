@@ -5,13 +5,23 @@
 #include "ast.h"
 #include "utils.h"
 
+#define PRETTY 0
+
 #define INDENT(N) printf("%*s", (int)((N) * 4), "")
 
-static void ast_pprint_variables(Vec /* ASTVariableDecl */ vars) {
+static void ast_dump_variables(Vec /* ASTVariableDecl */ vars) {
+#if PRETTY
     if (vars.len == 0)
         return;
+#endif
 
-    printf("VARIABLES\n");
+    printf(
+#if PRETTY
+        "VARIABLES\n"
+#else
+        "variables:\n"
+#endif
+    );
     for (size_t i = 0; i < vars.len; i++) {
         ASTVariableDecl *v = vars.elems[i];
         INDENT(1);
@@ -19,37 +29,75 @@ static void ast_pprint_variables(Vec /* ASTVariableDecl */ vars) {
     }
 }
 
-static void ast_pprint_expression(ASTExpression *expr) {
+static void ast_dump_expression(ASTExpression *expr
+#if !PRETTY
+                                , size_t indent_level
+#endif
+                                ) {
     assert(expr != NULL);
 
     switch (expr->kind) {
     case AST_EXPR_VARIABLE:
+#if PRETTY
         printf("%s", expr->variable.name);
+#else
+        INDENT(indent_level);
+        printf("variable: %s\n", expr->variable.name);
+#endif
         break;
 
     case AST_EXPR_BINARY_EXPRESSION:
-        ast_pprint_expression(expr->binary_expression.left);
+#if PRETTY
+        ast_dump_expression(expr->binary_expression.left);
+#else
+        INDENT(indent_level);
+        printf("binary expression:\n");
+        INDENT(indent_level + 1);
+        printf("left:\n");
+        ast_dump_expression(expr->binary_expression.left, indent_level + 2);
+        INDENT(indent_level + 1);
+        printf("op:");
+#endif
         switch (expr->binary_expression.op) {
         case AST_OP_ADD:
             printf(" + ");
             break;
         }
-        ast_pprint_expression(expr->binary_expression.right);
+
+#if PRETTY
+        ast_dump_expression(expr->binary_expression.right);
+#else
+        printf("\n");
+        INDENT(indent_level + 1);
+        printf("right:\n");
+        ast_dump_expression(expr->binary_expression.right, indent_level + 2);
+#endif
         break;
 
     case AST_EXPR_SUBROUTINE_CALL:
+#if PRETTY
         printf("%s(", expr->subroutine_name);
+#else
+        INDENT(indent_level);
+        printf("subroutine call: %s\n", expr->subroutine_name);
+#endif
         for (size_t i = 0; i < expr->arguments.len; i++) {
+#if PRETTY
             if (i != 0)
                 printf(", ");
-            ast_pprint_expression(expr->arguments.elems[i]);
+            ast_dump_expression(expr->arguments.elems[i]);
+#else
+            ast_dump_expression(expr->arguments.elems[i], indent_level + 1);
+#endif
         }
+#if PRETTY
         printf(")");
+#endif
         break;
     }
 }
 
-static void ast_pprint_statements(Vec /* ASTStatement */ stmts, size_t indent_level) {
+static void ast_dump_statements(Vec /* ASTStatement */ stmts, size_t indent_level) {
     for (size_t i = 0; i < stmts.len; i++) {
         ASTStatement *stmt = stmts.elems[i];
         ASTExpression *expr = stmt->expression;
@@ -58,23 +106,39 @@ static void ast_pprint_statements(Vec /* ASTStatement */ stmts, size_t indent_le
 
         switch (stmt->kind) {
         case AST_STMT_ASSIGNMENT:
+#if !PRETTY
+            printf("assignment:\n");
+            INDENT(++indent_level);
+            printf("lvalue:\n");
+#endif
             switch (stmt->lvalue.kind) {
             case AST_LVALUE_VARIABLE:
+#if PRETTY
                 printf("%s <- ", stmt->lvalue.variable.name);
-                expr = stmt->rvalue;
+#else
+                INDENT(indent_level + 1);
+                printf("variable: %s\n", stmt->lvalue.variable.name);
+#endif
                 break;
             }
+            expr = stmt->rvalue;
             [[fallthrough]];
 
         case AST_STMT_EXPRESSION:
-            ast_pprint_expression(expr);
+#if PRETTY
+            ast_dump_expression(expr);
             printf("\n");
+#else
+            INDENT(indent_level);
+            printf("rvalue:\n");
+            ast_dump_expression(expr, indent_level + 1);
+#endif
             break;
         }
     }
 }
 
-static void ast_pprint_subroutine(ASTSubroutine *sub) {
+static void ast_dump_subroutine(ASTSubroutine *sub) {
     assert(sub != NULL);
 
     switch (sub->kind) {
@@ -112,28 +176,44 @@ static void ast_pprint_subroutine(ASTSubroutine *sub) {
         break;
     }
 
-    ast_pprint_variables(sub->variables);
+    ast_dump_variables(sub->variables);
 
     printf("DÉBUT\n");
-    ast_pprint_statements(sub->statements, 1);
+    ast_dump_statements(sub->statements, 1);
     printf("FIN\n");
 }
 
-void ast_pretty_print(ASTProgram *ast) {
+void ast_dump(ASTProgram *ast) {
     assert(ast != NULL);
 
-    printf("PROGRAMME %s\n", ast->name);
+    printf(
+#if PRETTY
+           "PROGRAMME"
+#else
+           "program:"
+#endif
+           " %s\n", ast->name);
 
+#if PRETTY
     if (ast->subroutines.len > 0)
         printf("\n");
+#else
+    printf("subroutines:\n");
+#endif
     for (size_t i = 0; i < ast->subroutines.len; i++) {
-        ast_pprint_subroutine(ast->subroutines.elems[i]);
+        ast_dump_subroutine(ast->subroutines.elems[i]);
         printf("\n");
     }
 
-    ast_pprint_variables(ast->variables);
+    ast_dump_variables(ast->variables);
 
+#if PRETTY
     printf("DÉBUT\n");
-    ast_pprint_statements(ast->statements, 1);
+#else
+    printf("statements:\n");
+#endif
+    ast_dump_statements(ast->statements, 1);
+#if PRETTY
     printf("FIN\n");
+#endif
 }

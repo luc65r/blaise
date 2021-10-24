@@ -15,7 +15,7 @@ int main(void) {
     yyin = stdin;
     yyparse();
 
-    ast_pretty_print(ast);
+    ast_dump(ast);
 
     return 0;
 }
