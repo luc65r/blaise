@@ -1,4 +1,5 @@
 %{
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -78,7 +79,9 @@ EACUTE ([eE]|\xc3[\x89\xa9])
     if (!is_ident(s))
         REJECT;
     size_t len;
-    yylval.ident = (char *)u8_normalize(UNINORM_NFKC, s, u8_strlen(s), NULL, &len);
+    char *str = (char *)u8_normalize(UNINORM_NFKC, s, u8_strlen(s), NULL, &len);
+    assert(str != NULL);
+    yylval.ident = str;
     return TOKEN_IDENTIFIER;
 }
 . fprintf(stderr, "Unrecognized character: %s\n", yytext); yyterminate();
