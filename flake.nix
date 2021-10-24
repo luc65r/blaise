@@ -12,6 +12,7 @@
           gdb
           flex
           bison
+          libunistring
         ];
       };
     });

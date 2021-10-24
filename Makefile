@@ -2,11 +2,11 @@ TARGET_EXEC := pc
 
 CC := gcc
 CFLAGS := -std=gnu11
-CFLAGS += -O -march=native
+CFLAGS += -Og -march=native
 CFLAGS += -ggdb
 CFLAGS += -Wall -Wextra
 CFLAGS += -MMD -MP
-LDFLAGS := -lm
+LDFLAGS := -lm -lunistring
 FLEX := flex
 FFLAGS :=
 BISON := bison

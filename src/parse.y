@@ -10,9 +10,7 @@
 
 ASTProgram *ast;
 
-void yyerror(const char *s) {
-    fprintf(stderr, "error: %s\n", s);
-}
+void yyerror(const char *s);
 %}
 
 %union {
