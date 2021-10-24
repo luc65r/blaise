@@ -20,7 +20,7 @@ vpath %.h $(SRC_DIR)
 vpath scan.% $(BUILD_DIR)
 vpath parse.% $(BUILD_DIR)
 
-CFLAGS += -I$(BUILD_DIR)
+CFLAGS += -I$(SRC_DIR) -I$(BUILD_DIR)
 
 SRCS := $(wildcard $(SRC_DIR)/*.c) $(BUILD_DIR)/scan.c $(BUILD_DIR)/parse.c
 OBJS := $(patsubst %.c, %.o, $(patsubst $(SRC_DIR)/%, $(BUILD_DIR)/%, $(SRCS)))
