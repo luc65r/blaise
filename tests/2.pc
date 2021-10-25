@@ -2,6 +2,7 @@ PROGRAMME Test
 VARIABLES
     a : entier
 DÉBUT
-    a ← 12 + 4322156432
-    a <- a + 1
+    a ← 12 * 4322156432
+    a <- 6 * a + 2 * 64 DIV 8 - 6
+    écrire("a = " + a)
 FIN

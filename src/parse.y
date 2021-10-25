@@ -11,6 +11,8 @@
 
 ASTProgram *ast;
 
+static ASTExpression *mk_bin_expr(ASTBinaryOperator op, ASTExpression *left, ASTExpression *right);
+
 void yyerror(const char *s);
 %}
 
@@ -21,31 +23,34 @@ void yyerror(const char *s);
     ASTStatement *stmt;
     ASTExpression *expr;
     ASTLvalue lval;
-    ASTBinaryOperator op;
     mpz_t integer;
+    char *str;
     char *ident;
     Vec vec;
     int token;
 }
 
-%token <token> TOKEN_PROGRAM TOKEN_FUNCTION TOKEN_PROCEDURE TOKEN_VARIABLES TOKEN_BEGIN TOKEN_END
-%token <token> TOKEN_ASSIGNMENT TOKEN_LPAREN TOKEN_RPAREN TOKEN_COMMA TOKEN_COLON
-%token <token> TOKEN_PLUS
+%token TOKEN_PROGRAM TOKEN_FUNCTION TOKEN_PROCEDURE TOKEN_VARIABLES TOKEN_BEGIN TOKEN_END
+%token TOKEN_ASSIGNMENT TOKEN_LPAREN TOKEN_RPAREN TOKEN_COMMA TOKEN_COLON
+%token TOKEN_PLUS TOKEN_MINUS TOKEN_STAR TOKEN_DIV TOKEN_MOD
 %token <integer> TOKEN_INTEGER_LITTERAL
+%token <str> TOKEN_STRING_LITTERAL
 %token <ident> TOKEN_IDENTIFIER
 
 %type <prog> program
-%type <vec> subroutine_sequence subroutine_parameter_sequence statement_sequence variable_decl_sequence variable_decl_block argument_sequence
+%type <vec> subroutine_sequence subroutine_parameter_sequence statement_sequence variable_decl_sequence variable_decl_block arguments argument_sequence
 %type <sub> subroutine
 %type <decl> variable_decl
 %type <stmt> statement
 %type <expr> expression
 %type <lval> lvalue
-%type <op> binary_operator
 %type <integer> integer_litteral
+%type <str> string_litteral
 %type <ident> identifier
 
-%left TOKEN_PLUS
+%nonassoc TOKEN_LPAREN TOKEN_RPAREN
+%left TOKEN_PLUS TOKEN_MINUS
+%left TOKEN_STAR TOKEN_DIV TOKEN_MOD
 
 %start program
 
@@ -134,7 +139,7 @@ variable_decl_block
 
 variable_decl_sequence
     : %empty { $$ = VEC_EMPTY; }
-    | variable_decl_sequence variable_decl 
+    | variable_decl_sequence variable_decl
       {
           ASTVariableDecl *decl = malloc(sizeof *decl);
           *decl = $2;
@@ -160,28 +165,32 @@ lvalue
     ;
 
 expression
-    : integer_litteral
+    : TOKEN_LPAREN expression TOKEN_RPAREN { $$ = $2; }
+    | integer_litteral
       {
           $$ = malloc(sizeof *$$);
           $$->kind = AST_EXPR_INTEGER_LITTERAL;
           mpz_init_set($$->integer_litteral, $1);
           mpz_clear($1);
       }
+    | string_litteral
+      {
+          $$ = malloc(sizeof *$$);
+          $$->kind = AST_EXPR_STRING_LITTERAL;
+          $$->string_litteral = $1;
+      }
     | identifier
       {
           $$ = malloc(sizeof *$$);
           $$->kind = AST_EXPR_VARIABLE;
-          $$->variable.name = $1; 
+          $$->variable.name = $1;
       }
-    | expression binary_operator expression
-      {
-          $$ = malloc(sizeof *$$);
-          $$->kind = AST_EXPR_BINARY_EXPRESSION;
-          $$->binary_expression.left = $1;
-          $$->binary_expression.op = $2;
-          $$->binary_expression.right = $3;
-      }
-    | identifier TOKEN_LPAREN argument_sequence TOKEN_RPAREN
+    | expression TOKEN_PLUS expression { $$ = mk_bin_expr(AST_OP_ADD, $1, $3); }
+    | expression TOKEN_MINUS expression { $$ = mk_bin_expr(AST_OP_SUB, $1, $3); }
+    | expression TOKEN_STAR expression { $$ = mk_bin_expr(AST_OP_MUL, $1, $3); }
+    | expression TOKEN_DIV expression { $$ = mk_bin_expr(AST_OP_DIV, $1, $3); }
+    | expression TOKEN_MOD expression { $$ = mk_bin_expr(AST_OP_MOD, $1, $3); }
+    | identifier TOKEN_LPAREN arguments TOKEN_RPAREN
       {
           $$ = malloc(sizeof *$$);
           $$->kind = AST_EXPR_SUBROUTINE_CALL;
@@ -190,17 +199,22 @@ expression
       }
     ;
 
-argument_sequence
+arguments
     : %empty { $$ = VEC_EMPTY; }
-    | argument_sequence TOKEN_COMMA expression { $$ = $1; vec_push(&$$, $3); }
+    | argument_sequence
     ;
 
-binary_operator
-    : TOKEN_PLUS { $$ = AST_OP_ADD; }
+argument_sequence
+    : expression { $$ = VEC_EMPTY; vec_push(&$$, $1); }
+    | argument_sequence TOKEN_COMMA expression { $$ = $1; vec_push(&$$, $3); }
     ;
 
 integer_litteral
     : TOKEN_INTEGER_LITTERAL
+    ;
+
+string_litteral
+    : TOKEN_STRING_LITTERAL
     ;
 
 identifier
@@ -208,3 +222,12 @@ identifier
     ;
 
 %%
+
+static ASTExpression *mk_bin_expr(ASTBinaryOperator op, ASTExpression *left, ASTExpression *right) {
+    ASTExpression *expr = malloc(sizeof *expr);
+    expr->kind = AST_EXPR_BINARY_EXPRESSION;
+    expr->binary_expression.left = left;
+    expr->binary_expression.op = op;
+    expr->binary_expression.right = right;
+    return expr;
+}

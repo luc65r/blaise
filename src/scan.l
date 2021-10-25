@@ -73,7 +73,16 @@ EACUTE ([eE]|\xc3[\x89\xa9])
 "," return TOKEN_COMMA;
 ":" return TOKEN_COLON;
 "+" return TOKEN_PLUS;
+"-" return TOKEN_MINUS;
+"*" return TOKEN_STAR;
+{D}{I}{V} return TOKEN_DIV;
+{M}{O}{D} return TOKEN_MOD;
 "//"[^\n]*\n
+"\""("\\\""|[^"])*"\"" {
+    yylval.str = strdup(yytext + 1);
+    yylval.str[strlen(yylval.str) - 1] = '\0';
+    return TOKEN_STRING_LITTERAL;
+}
 [0-9]+ {
     int err = mpz_init_set_str(yylval.integer, yytext, 10);
     assert(err == 0);
@@ -81,7 +90,7 @@ EACUTE ([eE]|\xc3[\x89\xa9])
 }
 [ \t\n]+ /* TODO: unicode white-space */
 [^ \t\n]+ {
-    const uint8_t *s = yytext;
+    const uint8_t *s = (uint8_t *)yytext;
     if (!is_ident(s))
         REJECT;
     size_t len;

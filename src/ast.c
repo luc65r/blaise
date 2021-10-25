@@ -49,6 +49,15 @@ static void ast_dump_expression(ASTExpression *expr
 #endif
         break;
 
+    case AST_EXPR_STRING_LITTERAL:
+#if PRETTY
+        printf("\"%s\"", expr->string_litteral);
+#else
+        INDENT(indent_level);
+        printf("string: \"%s\"\n", expr->string_litteral);
+#endif
+        break;
+
     case AST_EXPR_VARIABLE:
 #if PRETTY
         printf("%s", expr->variable.name);
@@ -59,32 +68,33 @@ static void ast_dump_expression(ASTExpression *expr
         break;
 
     case AST_EXPR_BINARY_EXPRESSION:
-#if PRETTY
-        ast_dump_expression(expr->binary_expression.left);
-#else
-        INDENT(indent_level);
-        printf("binary expression:\n");
-        INDENT(indent_level + 1);
-        printf("left:\n");
-        ast_dump_expression(expr->binary_expression.left, indent_level + 2);
-        INDENT(indent_level + 1);
-        printf("op:");
-#endif
-        switch (expr->binary_expression.op) {
-        case AST_OP_ADD:
-            printf(" + ");
-            break;
-        }
+        {
+            char *bops[] = {
+                [AST_OP_ADD] = "+",
+                [AST_OP_SUB] = "-",
+                [AST_OP_MUL] = "*",
+                [AST_OP_DIV] = "DIV",
+                [AST_OP_MOD] = "MOD",
+            };
 
 #if PRETTY
-        ast_dump_expression(expr->binary_expression.right);
+            ast_dump_expression(expr->binary_expression.left);
+            printf(" %s ", bops[expr->binary_expression.op]);
+            ast_dump_expression(expr->binary_expression.right);
 #else
-        printf("\n");
-        INDENT(indent_level + 1);
-        printf("right:\n");
-        ast_dump_expression(expr->binary_expression.right, indent_level + 2);
+            INDENT(indent_level);
+            printf("binary expression:\n");
+            INDENT(indent_level + 1);
+            printf("left:\n");
+            ast_dump_expression(expr->binary_expression.left, indent_level + 2);
+            INDENT(indent_level + 1);
+            printf("op: %s\n", bops[expr->binary_expression.op]);
+            INDENT(indent_level + 1);
+            printf("right:\n");
+            ast_dump_expression(expr->binary_expression.right, indent_level + 2);
 #endif
-        break;
+            break;
+        }
 
     case AST_EXPR_SUBROUTINE_CALL:
 #if PRETTY
@@ -112,7 +122,6 @@ static void ast_dump_expression(ASTExpression *expr
 static void ast_dump_statements(Vec /* ASTStatement */ stmts, size_t indent_level) {
     for (size_t i = 0; i < stmts.len; i++) {
         ASTStatement *stmt = stmts.elems[i];
-        ASTExpression *expr = stmt->expression;
 
         INDENT(indent_level);
 
@@ -120,7 +129,7 @@ static void ast_dump_statements(Vec /* ASTStatement */ stmts, size_t indent_leve
         case AST_STMT_ASSIGNMENT:
 #if !PRETTY
             printf("assignment:\n");
-            INDENT(++indent_level);
+            INDENT(indent_level + 1);
             printf("lvalue:\n");
 #endif
             switch (stmt->lvalue.kind) {
@@ -128,25 +137,33 @@ static void ast_dump_statements(Vec /* ASTStatement */ stmts, size_t indent_leve
 #if PRETTY
                 printf("%s <- ", stmt->lvalue.variable.name);
 #else
-                INDENT(indent_level + 1);
+                INDENT(indent_level + 2);
                 printf("variable: %s\n", stmt->lvalue.variable.name);
 #endif
                 break;
             }
-            expr = stmt->rvalue;
-            [[fallthrough]];
+#if PRETTY
+            ast_dump_expression(stmt->rvalue);
+#else
+            INDENT(indent_level + 1);
+            printf("rvalue:\n");
+            ast_dump_expression(stmt->rvalue, indent_level + 2);
+#endif
+            break;
 
         case AST_STMT_EXPRESSION:
 #if PRETTY
-            ast_dump_expression(expr);
-            printf("\n");
+            ast_dump_expression(stmt->expression);
 #else
-            INDENT(indent_level);
-            printf("rvalue:\n");
-            ast_dump_expression(expr, indent_level + 1);
+            printf("expression:\n");
+            ast_dump_expression(stmt->expression, indent_level + 1);
 #endif
             break;
         }
+
+#if PRETTY
+        printf("\n");
+#endif
     }
 }
 

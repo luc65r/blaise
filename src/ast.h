@@ -15,6 +15,10 @@ typedef struct {
 
 typedef enum {
     AST_OP_ADD,
+    AST_OP_SUB,
+    AST_OP_MUL,
+    AST_OP_DIV,
+    AST_OP_MOD,
 } ASTBinaryOperator;
 
 typedef struct ASTExpression ASTExpression;
@@ -27,6 +31,7 @@ struct ASTBinaryExpression {
 
 typedef enum {
     AST_EXPR_INTEGER_LITTERAL,
+    AST_EXPR_STRING_LITTERAL,
     AST_EXPR_VARIABLE,
     AST_EXPR_BINARY_EXPRESSION,
     AST_EXPR_SUBROUTINE_CALL,
@@ -36,6 +41,8 @@ struct ASTExpression {
     ASTExpressionKind kind;
     union {
         mpz_t integer_litteral;
+
+        char *string_litteral;
 
         ASTVariable variable;
 
