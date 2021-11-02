@@ -1,6 +1,6 @@
 PROGRAMME Test
 VARIABLES
-    a : entier
+    a : Entier
 DÉBUT
     a ← 12 * 4322156432
     a <- 6 * a + 2 * 64 DIV 8 - 6

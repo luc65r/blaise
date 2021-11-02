@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "ast.h"
+#include "eval.h"
 #include "vec.h"
 
 #include "parse.h"
@@ -15,7 +16,8 @@ int main(void) {
     yyin = stdin;
     yyparse();
 
-    ast_dump(ast);
+    //ast_dump(ast);
+    eval(ast);
 
     return 0;
 }
