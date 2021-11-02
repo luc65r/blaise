@@ -96,6 +96,9 @@ EACUTE ([eE]|\xc3[\x89\xa9])
     size_t len;
     char *str = (char *)u8_normalize(UNINORM_NFKC, s, u8_strlen(s), NULL, &len);
     assert(str != NULL);
+    str = realloc(str, len + 1);
+    assert(str != NULL);
+    str[len] = '\0';
     yylval.ident = str;
     return TOKEN_IDENTIFIER;
 }
