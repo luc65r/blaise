@@ -1,15 +1,20 @@
 #pragma once
 
 #include <gmp.h>
+#include <stdbool.h>
 #include <stddef.h>
 
-#include "vec.h"
+typedef struct {
+    size_t sl, sc, el, ec;
+} ASTLoc;
 
 typedef struct {
+    ASTLoc loc;
     char *name;
-} ASTVariable;
+} ASTVar;
 
 typedef struct {
+    ASTLoc loc;
     char *name;
 } ASTType;
 
@@ -19,114 +24,201 @@ typedef enum {
     AST_OP_MUL,
     AST_OP_DIV,
     AST_OP_MOD,
-} ASTBinaryOperator;
+    AST_OP_AND,
+    AST_OP_OR,
+    AST_OP_EQ,
+    AST_OP_NEQ,
+    AST_OP_GT,
+    AST_OP_LT,
+    AST_OP_GE,
+    AST_OP_LE,
+} ASTBinOp;
 
-typedef struct ASTExpression ASTExpression;
-typedef struct ASTBinaryExpression ASTBinaryExpression;
+typedef struct ASTExpr ASTExpr;
+typedef struct ASTBinExpr ASTBinExpr;
 
-struct ASTBinaryExpression {
-    ASTBinaryOperator op;
-    ASTExpression *left, *right;
+struct ASTBinExpr {
+    ASTLoc loc;
+    ASTBinOp op;
+    ASTExpr *left, *right;
 };
 
 typedef enum {
-    AST_EXPR_INTEGER_LITTERAL,
-    AST_EXPR_STRING_LITTERAL,
-    AST_EXPR_VARIABLE,
-    AST_EXPR_BINARY_EXPRESSION,
-    AST_EXPR_SUBROUTINE_CALL,
-} ASTExpressionKind;
+    AST_EXPR_INTLIT,
+    AST_EXPR_STRLIT,
+    AST_EXPR_BOOLLIT,
+    AST_EXPR_VAR,
+    AST_EXPR_BINEXPR,
+    AST_EXPR_CALL,
+} ASTExprKind;
 
-struct ASTExpression {
-    ASTExpressionKind kind;
+struct ASTExpr {
+    ASTLoc loc;
+
+    ASTExprKind kind;
     union {
-        mpz_t integer_litteral;
+        mpz_t intlit;
 
-        char *string_litteral;
+        char *strlit;
 
-        ASTVariable variable;
+        bool boollit;
 
-        ASTBinaryExpression binary_expression;
+        ASTVar *var;
 
-        // subroutine call
+        ASTBinExpr *binexpr;
+
         struct {
-            char *subroutine_name;
-            Vec /* ASTExpression */ arguments;
+            char *subname;
+            size_t nargs;
+            ASTExpr **args;
         };
     };
 };
 
 typedef enum {
-    AST_LVALUE_VARIABLE,
-} ASTLvalueKind;
+    AST_LVAL_VAR,
+} ASTLvalKind;
 
 typedef struct {
-    ASTLvalueKind kind;
+    ASTLoc loc;
+
+    ASTLvalKind kind;
     union {
-        ASTVariable variable;
+        ASTVar *var;
     };
-} ASTLvalue;
+} ASTLval;
+
+typedef struct ASTStmt ASTStmt;
+typedef struct ASTIfElseBlock ASTIfElseBlock;
+
+struct ASTIfElseBlock {
+    ASTLoc loc;
+
+    // NULL if no condition
+    ASTExpr *cond;
+
+    size_t nstmts;
+    ASTStmt **stmts;
+
+    // NULL if simple else;
+    ASTIfElseBlock *elseb;
+};
+
+typedef struct {
+    ASTLoc loc;
+
+    ASTExpr *cond;
+
+    size_t nstmts;
+    ASTStmt **stmts;
+} ASTWhileBlock;
+
+typedef struct {
+    ASTLoc loc;
+
+    size_t nstmts;
+    ASTStmt **stmts;
+
+    ASTExpr *cond;
+} ASTDoWhileBlock;
+
+typedef struct {
+    ASTLoc loc;
+
+    ASTLval *iter;
+    mpz_t from;
+    mpz_t to;
+
+    size_t nstmts;
+    ASTStmt **stmts;
+} ASTForBlock;
 
 typedef enum {
     AST_STMT_ASSIGNMENT,
-    AST_STMT_EXPRESSION,
-} ASTStatementKind;
+    AST_STMT_EXPR,
+    AST_STMT_IF,
+    AST_STMT_WHILE,
+    AST_STMT_DO_WHILE,
+    AST_STMT_FOR,
+} ASTStmtKind;
 
-typedef struct {
-    ASTStatementKind kind;
+struct ASTStmt {
+    ASTLoc loc;
+
+    ASTStmtKind kind;
     union {
-        // assignment
         struct {
-            ASTLvalue lvalue;
-            ASTExpression *rvalue;
+            ASTLval *lval;
+            ASTExpr *rval;
         };
 
-        ASTExpression *expression;
+        ASTExpr *expr;
+
+        ASTIfElseBlock *ifb;
+        ASTWhileBlock *whileb;
+        ASTDoWhileBlock *dowhileb;
+        ASTForBlock *forb;
     };
-} ASTStatement;
+};
 
 typedef struct {
-    ASTVariable variable;
-    ASTType type;
-} ASTVariableDecl;
+    ASTLoc loc;
+
+    ASTVar *var;
+    ASTType *type;
+} ASTVarDecl;
 
 typedef enum {
     AST_PARAM_IN,
     AST_PARAM_OUT,
     AST_PARAM_IN_OUT,
-} ASTSubroutineParamaterKind;
+} ASTSubParamKind;
 
 typedef struct {
-    ASTSubroutineParamaterKind kind;
-    ASTVariableDecl decl;
-} ASTSubroutineParameter;
+    ASTLoc loc;
+
+    ASTSubParamKind kind;
+    ASTVarDecl *decl;
+} ASTSubParam;
 
 typedef enum {
-    AST_SUB_FUNCTION,
-    AST_SUB_PROCEDURE,
-} ASTSubroutineKind;
+    AST_SUB_FUNC,
+    AST_SUB_PROC,
+} ASTSubKind;
 
 typedef struct {
+    ASTLoc loc;
+
     char *name;
 
-    ASTSubroutineKind kind;
+    ASTSubKind kind;
 
-    Vec /* ASTSubroutineParameter */ parameters;
+    size_t nparams;
+    ASTSubParam **params;
     union {
-        // function
-        ASTType return_type;
+        ASTType *rtype;
     };
 
-    Vec /* ASTVariableDecl */ variables;
-    Vec /* ASTStatement */ statements;
-} ASTSubroutine;
+    size_t nvars;
+    ASTVarDecl **vars;
+
+    size_t nstmts;
+    ASTStmt **stmts;
+} ASTSub;
 
 typedef struct {
+    ASTLoc loc;
+
     char *name;
 
-    Vec /* ASTSUbroutine */ subroutines;
-    Vec /* ASTVariableDecl */ variables;
-    Vec /* ASTStatement */ statements;
-} ASTProgram;
+    size_t nsubs;
+    ASTSub **subs;
 
-void ast_dump(ASTProgram *ast);
+    size_t nvars;
+    ASTVarDecl **vars;
+
+    size_t nstmts;
+    ASTStmt **stmts;
+} ASTProg;
+
+void ast_dump(ASTProg *ast);
