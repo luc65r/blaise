@@ -224,3 +224,4 @@ typedef struct {
 
 //void ast_pretty_print(FILE *f, ASTProg *ast);
 json_t *ast_json(ASTProg *ast);
+void ast_free(ASTProg *ast);

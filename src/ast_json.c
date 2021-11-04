@@ -122,7 +122,11 @@ static json_t *ast_expr_json(ASTExpr *expr) {
     json_t *j = json_pack("{s:o}", "loc", ast_loc_json(expr->loc));
     switch (expr->kind) {
     case AST_EXPR_INTLIT:
-        json_object_set_new(j, "intlit", json_string(mpz_get_str(NULL, 10, expr->intlit)));
+        {
+            char *s = mpz_get_str(NULL, 10, expr->intlit);
+            json_object_set_new(j, "intlit", json_string(s));
+            free(s);
+        }
         break;
     case AST_EXPR_STRLIT:
         json_object_set_new(j, "strlit", json_string(expr->strlit));

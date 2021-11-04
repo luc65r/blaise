@@ -15,6 +15,7 @@
           libunistring
           gmp
           jansson
+          valgrind
         ];
       };
     });

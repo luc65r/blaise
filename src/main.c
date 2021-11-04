@@ -64,6 +64,7 @@ static struct argp argp = { options, parse_opt, args_doc, doc };
 )
 
 int main(int argc, char **argv) {
+    int err;
     struct args args = {
         .file = "-",
         .ast = false,
@@ -76,22 +77,29 @@ int main(int argc, char **argv) {
     FILE *f = read_stdin ? stdin : fopen(args.file, "r");
     if (f == NULL) {
         fprintf(stderr, "cannot access '%s': %s\n", args.file, strerror(errno));
-        return EXIT_FAILURE;
+        return 1;
     }
 
     yyin = f;
-    yyparse();
+    err = yyparse();
+    if (err)
+        goto error;
+    yylex_destroy();
 
     if (args.ast) {
         json_t *j = ast_json(ast);
         json_dumpf(j, stdout, JSON_INDENT(2));
         printf("\n");
+        json_decref(j);
     } else {
         eval(ast);
     }
 
+    ast_free(ast);
+
+error:
     if (!read_stdin)
         fclose(f);
 
-    return EXIT_SUCCESS;
+    return !!err;
 }
