@@ -29,9 +29,6 @@ DEPS := $(OBJS:.o=.d)
 
 all: $(BUILD_DIR)/$(TARGET_EXEC)
 
-run: $(BUILD_DIR)/$(TARGET_EXEC)
-	@$<
-
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) -c $< -o $@ $(CFLAGS)
