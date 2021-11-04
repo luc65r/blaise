@@ -48,6 +48,10 @@ void yyerror(const char *s);
 %define parse.error detailed
 %locations
 
+%initial-action {
+    @$ = (YYLTYPE){ 1, 1, 1, 1 };
+};
+
 %union {
     ASTProg *prog;
     ASTSub *sub;
