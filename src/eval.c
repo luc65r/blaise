@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <gmp.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,11 +9,11 @@
 #include "eval.h"
 #include "map.h"
 #include "utils.h"
-#include "vec.h"
 
 typedef enum {
     TNONE,
     TINT,
+    TBOOL,
     TSTR,
 } Type;
 
@@ -20,6 +21,7 @@ typedef struct {
     Type ty;
     union {
         mpz_t i;
+        bool b;
         char *s;
     };
 } Value;
@@ -32,10 +34,11 @@ typedef enum {
 typedef struct {
     SubroutineKind kind;
     Type rty;
-    Vec /* Type */ args;
+    size_t nargs;
+    Type **args;
     union {
-        Value (*fn)(Vec /* Value */);
-        ASTSubroutine sub;
+        Value (*fn)(size_t nargs, Value ** args);
+        ASTSub *sub;
     };
 } Subroutine;
 
@@ -45,22 +48,21 @@ typedef struct {
     Map /* Type */ *types;
 } State;
 
-static Value builtin_write(Vec vals);
+static Value builtin_write(size_t nargs, Value **args);
 static void insert_builtin_subs(State *s);
 static void insert_builtin_types(State *s);
-static Value call_sub(State *s, Subroutine *sub, Vec /* Value */ args);
+static Value call_sub(State *s, Subroutine *sub, size_t nargs, Value **args);
 static Value cast(Value v, Type t);
-static void insert_vars(State *s, Vec /* ASTVariableDecl */ decls);
-static Value eval_expr(State *s, ASTExpression *expr, Type expected);
-static void eval_stmt(State *s, ASTStatement *stmt);
-static void eval_stmts(State *s, Vec /* ASTStatement */ stmts);
+static void insert_vars(State *s, size_t ndecls, ASTVarDecl **decls);
+static Value eval_expr(State *s, ASTExpr *expr, Type expected);
+static void eval_stmt(State *s, ASTStmt *stmt);
+static void eval_stmts(State *s, size_t nstmts, ASTStmt **stmts);
 
-static Value builtin_write(Vec vals) {
-    assert(vals.len == 1);
-    Value *v = vals.elems[0];
-    assert(v->ty == TSTR);
+static Value builtin_write(size_t nargs, Value **args) {
+    assert(nargs == 1);
+    assert(args[0]->ty == TSTR);
 
-    printf("%s\n", v->s);
+    printf("%s\n", args[0]->s);
 
     return (Value){ TNONE };
 }
@@ -70,12 +72,13 @@ static void insert_builtin_subs(State *s) {
         char *n;
         Subroutine sub;
     } subs[] = {
-        { "écrire", { SUB_BUILTIN, TNONE, ({
+        { "écrire", { SUB_BUILTIN, TNONE, 1, ({
                         Type *t = malloc(sizeof *t);
                         assert(t != NULL);
                         *t = TSTR;
-                        Vec v = VEC_EMPTY;
-                        vec_push(&v, t);
+                        Type **v = malloc(sizeof *v);
+                        assert(v != NULL);
+                        v[0] = t;
                         v;
                     }), .fn = &builtin_write } },
     };
@@ -135,43 +138,42 @@ static Value cast(Value v, Type t) {
     return v;
 }
 
-static void insert_vars(State *s, Vec /* ASTVariableDecl */ decls) {
-    for (size_t i = 0; i < decls.len; i++) {
-        ASTVariableDecl *d = decls.elems[i];
+static void insert_vars(State *s, size_t ndecls, ASTVarDecl **decls) {
+    for (size_t i = 0; i < ndecls; i++) {
         Value *v = malloc(sizeof *v);
         assert(v != NULL);
-        Type *t = map_get(s->types, d->type.name);
+        Type *t = map_get(s->types, decls[i]->type->name);
         assert(t != NULL);
         v->ty = *t;
-        map_insert(s->vars, d->variable.name, v);
+        map_insert(s->vars, decls[i]->var->name, v);
     }
 }
 
-static Value eval_expr(State *s, ASTExpression *expr, Type expected) {
+static Value eval_expr(State *s, ASTExpr *expr, Type expected) {
     Value v;
 
     switch (expr->kind) {
-    case AST_EXPR_INTEGER_LITTERAL:
+    case AST_EXPR_INTLIT:
         v.ty = TINT;
-        mpz_init_set(v.i, expr->integer_litteral);
+        mpz_init_set(v.i, expr->intlit);
         break;
 
-    case AST_EXPR_STRING_LITTERAL:
+    case AST_EXPR_STRLIT:
         v.ty = TSTR;
-        v.s = expr->string_litteral;
+        v.s = expr->strlit;
         break;
 
-    case AST_EXPR_VARIABLE:
+    case AST_EXPR_VAR:
         {
-            Value *var = map_get(s->vars, expr->variable.name);
+            Value *var = map_get(s->vars, expr->var->name);
             assert(var != NULL);
             v = *var;
         }
         break;
 
-    case AST_EXPR_BINARY_EXPRESSION:
+    case AST_EXPR_BINEXPR:
         {
-            ASTBinaryExpression *b = &expr->binary_expression;
+            ASTBinExpr *b = expr->binexpr;
             switch (expected) {
             case TINT:
                 {
@@ -183,7 +185,7 @@ static Value eval_expr(State *s, ASTExpression *expr, Type expected) {
                         [AST_OP_MOD] = &mpz_fdiv_r,
                     };
                     Value v1 = eval_expr(s, b->left, TINT);
-                    assert(v1.ty == TINT); 
+                    assert(v1.ty == TINT);
                    Value v2 = eval_expr(s, b->right, TINT);
                     assert(v2.ty == TINT);
                     v.ty = TINT;
@@ -207,79 +209,78 @@ static Value eval_expr(State *s, ASTExpression *expr, Type expected) {
                     v.s[l1 + l2] = '\0';
                 }
                 break;
-            case TNONE:
-                unreachable();
+            default:
+                TODO;
             }
         }
         break;
 
-    case AST_EXPR_SUBROUTINE_CALL:
+    case AST_EXPR_CALL:
         {
-            Subroutine *sub = map_get(s->subs, expr->subroutine_name);
+            Subroutine *sub = map_get(s->subs, expr->subname);
             assert(sub != NULL);
-            assert(expr->arguments.len == sub->args.len);
-            Vec /* Value */ args = VEC_EMPTY;
-            for (size_t i = 0; i < sub->args.len; i++) {
-                Type *t = sub->args.elems[i];
-                ASTExpression *e = expr->arguments.elems[i];
-                Value *v1 = malloc(sizeof *v1);
-                assert(v1 != NULL);
-                *v1 = eval_expr(s, e, *t);
-                vec_push(&args, v1);
+            assert(expr->nargs == sub->nargs);
+            size_t nargs = expr->nargs;
+            Value **args = malloc(sizeof *args * nargs);
+            for (size_t i = 0; i < nargs; i++) {
+                Value *val = malloc(sizeof *val);
+                assert(val != NULL);
+                *val = eval_expr(s, expr->args[i], *sub->args[i]);
+                args[i] = val;
             }
-            v = call_sub(s, sub, args);
+            v = call_sub(s, sub, nargs, args);
         }
         break;
+
+    default:
+        TODO;
     }
 
     return cast(v, expected);
 }
 
-static void eval_stmt(State *s, ASTStatement *stmt) {
+static void eval_stmt(State *s, ASTStmt *stmt) {
     switch (stmt->kind) {
     case AST_STMT_ASSIGNMENT:
         {
-            Value *var = map_get(s->vars, stmt->lvalue.variable.name);
+            Value *var = map_get(s->vars, stmt->lval->var->name);
             assert(var != NULL);
-            *var = eval_expr(s, stmt->rvalue, var->ty);
+            *var = eval_expr(s, stmt->rval, var->ty);
         }
         break;
-        
-    case AST_STMT_EXPRESSION:
-        eval_expr(s, stmt->expression, TNONE);
+
+    case AST_STMT_EXPR:
+        eval_expr(s, stmt->expr, TNONE);
         break;
+
+    default:
+        TODO;
     }
 }
 
-static void eval_stmts(State *s, Vec /* ASTStatement */ stmts) {
-    for (size_t i = 0; i < stmts.len; i++)
-        eval_stmt(s, stmts.elems[i]);
+static void eval_stmts(State *s, size_t nstmts, ASTStmt **stmts) {
+    for (size_t i = 0; i < nstmts; i++)
+        eval_stmt(s, stmts[i]);
 }
 
-static Value call_sub(State *s, Subroutine *sub, Vec /* Value */ args) {
-    assert(args.len == sub->args.len);
+static Value call_sub(State *s, Subroutine *sub, size_t nargs, Value **args) {
+    assert(nargs == sub->nargs);
     switch (sub->kind) {
     case SUB_BUILTIN:
-        sub->fn(args);
+        sub->fn(nargs, args);
         break;
 
     case SUB_USER:
-        {
-            ASTSubroutine *ast = &sub->sub;
-            for (size_t i = 0; i < args.len; i++) {
-                ASTSubroutineParameter *p = ast->parameters.elems[i];
-                map_insert(s->vars, p->decl.variable.name, args.elems[i]);
-            }
-
-            eval_stmts(s, ast->statements);
-        }
+        for (size_t i = 0; i < nargs; i++)
+            map_insert(s->vars, sub->sub->params[i]->decl->var->name, args[i]);
+        eval_stmts(s, sub->sub->nstmts, sub->sub->stmts);
         break;
     }
 
     return (Value){ TNONE };
 }
 
-void eval(ASTProgram *ast) {
+void eval(ASTProg *ast) {
     State s;
     s.subs = map_init();
     s.vars = map_init();
@@ -288,6 +289,6 @@ void eval(ASTProgram *ast) {
     insert_builtin_types(&s);
     insert_builtin_subs(&s);
 
-    insert_vars(&s, ast->variables);
-    eval_stmts(&s, ast->statements);
+    insert_vars(&s, ast->nvars, ast->vars);
+    eval_stmts(&s, ast->nstmts, ast->stmts);
 }
