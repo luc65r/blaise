@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <gmp.h>
 #include <stdlib.h>
 
 #include "ast.h"
