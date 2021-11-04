@@ -2,4 +2,4 @@
 
 #include "ast.h"
 
-void eval(ASTProgram *ast);
+void eval(ASTProg *ast);

@@ -1,248 +1,213 @@
 #include <assert.h>
 #include <gmp.h>
+#include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "ast.h"
 #include "utils.h"
 
-#define PRETTY 0
+#define COMPACT_LOC 1
 
-#define INDENT(N) printf("%*s", (int)((N) * 4), "")
+#define ARRAY(N, E, F) ({                                           \
+            size_t _n = (N);                                        \
+            __auto_type _e = (E);                                   \
+            json_t *_ja = json_array();                             \
+            for (size_t _i = 0; _i < _n; _i++) {                    \
+                int _err = json_array_append_new(_ja, F(_e[_i]));   \
+                assert(_err == 0);                                  \
+            }                                                       \
+            _ja;                                                    \
+        })
 
-static void ast_dump_variables(Vec /* ASTVariableDecl */ vars) {
-#if PRETTY
-    if (vars.len == 0)
-        return;
-#endif
+static json_t *ast_loc_json(ASTLoc loc);
+static json_t *ast_sub_json(ASTSub *sub);
+static json_t *ast_decl_json(ASTVarDecl *decl);
+static json_t *ast_stmt_json(ASTStmt *stmt);
+static json_t *ast_lval_json(ASTLval *lval);
+static json_t *ast_expr_json(ASTExpr *expr);
+static json_t *ast_binexpr_json(ASTBinExpr *expr);
+static json_t *ast_if_json(ASTIfElseBlock *b);
+static json_t *ast_while_json(ASTWhileBlock *b);
+static json_t *ast_dowhile_json(ASTDoWhileBlock *b);
+static json_t *ast_for_json(ASTForBlock *b);
+static json_t *ast_sub_param_json(ASTSubParam *param);
+static json_t *ast_type_json(ASTType *type);
+static json_t *ast_var_json(ASTVar *var);
 
-    printf(
-#if PRETTY
-        "VARIABLES\n"
-#else
-        "variables:\n"
-#endif
-    );
-    for (size_t i = 0; i < vars.len; i++) {
-        ASTVariableDecl *v = vars.elems[i];
-        INDENT(1);
-        printf("%s : %s\n", v->variable.name, v->type.name);
-    }
-}
-
-static void ast_dump_expression(ASTExpression *expr
-#if !PRETTY
-                                , size_t indent_level
-#endif
-                                ) {
-    assert(expr != NULL);
-
-    switch (expr->kind) {
-    case AST_EXPR_INTEGER_LITTERAL:
-#if PRETTY
-        mpz_out_str(stdout, 10, expr->integer_litteral);
-#else
-        INDENT(indent_level);
-        printf("integer: ");
-        mpz_out_str(stdout, 10, expr->integer_litteral);
-        printf("\n");
-#endif
-        break;
-
-    case AST_EXPR_STRING_LITTERAL:
-#if PRETTY
-        printf("\"%s\"", expr->string_litteral);
-#else
-        INDENT(indent_level);
-        printf("string: \"%s\"\n", expr->string_litteral);
-#endif
-        break;
-
-    case AST_EXPR_VARIABLE:
-#if PRETTY
-        printf("%s", expr->variable.name);
-#else
-        INDENT(indent_level);
-        printf("variable: %s\n", expr->variable.name);
-#endif
-        break;
-
-    case AST_EXPR_BINARY_EXPRESSION:
-        {
-            char *bops[] = {
-                [AST_OP_ADD] = "+",
-                [AST_OP_SUB] = "-",
-                [AST_OP_MUL] = "*",
-                [AST_OP_DIV] = "DIV",
-                [AST_OP_MOD] = "MOD",
-            };
-
-#if PRETTY
-            ast_dump_expression(expr->binary_expression.left);
-            printf(" %s ", bops[expr->binary_expression.op]);
-            ast_dump_expression(expr->binary_expression.right);
-#else
-            INDENT(indent_level);
-            printf("binary expression:\n");
-            INDENT(indent_level + 1);
-            printf("left:\n");
-            ast_dump_expression(expr->binary_expression.left, indent_level + 2);
-            INDENT(indent_level + 1);
-            printf("op: %s\n", bops[expr->binary_expression.op]);
-            INDENT(indent_level + 1);
-            printf("right:\n");
-            ast_dump_expression(expr->binary_expression.right, indent_level + 2);
-#endif
-            break;
-        }
-
-    case AST_EXPR_SUBROUTINE_CALL:
-#if PRETTY
-        printf("%s(", expr->subroutine_name);
-#else
-        INDENT(indent_level);
-        printf("subroutine call: %s\n", expr->subroutine_name);
-#endif
-        for (size_t i = 0; i < expr->arguments.len; i++) {
-#if PRETTY
-            if (i != 0)
-                printf(", ");
-            ast_dump_expression(expr->arguments.elems[i]);
-#else
-            ast_dump_expression(expr->arguments.elems[i], indent_level + 1);
-#endif
-        }
-#if PRETTY
-        printf(")");
-#endif
-        break;
-    }
-}
-
-static void ast_dump_statements(Vec /* ASTStatement */ stmts, size_t indent_level) {
-    for (size_t i = 0; i < stmts.len; i++) {
-        ASTStatement *stmt = stmts.elems[i];
-
-        INDENT(indent_level);
-
-        switch (stmt->kind) {
-        case AST_STMT_ASSIGNMENT:
-#if !PRETTY
-            printf("assignment:\n");
-            INDENT(indent_level + 1);
-            printf("lvalue:\n");
-#endif
-            switch (stmt->lvalue.kind) {
-            case AST_LVALUE_VARIABLE:
-#if PRETTY
-                printf("%s <- ", stmt->lvalue.variable.name);
-#else
-                INDENT(indent_level + 2);
-                printf("variable: %s\n", stmt->lvalue.variable.name);
-#endif
-                break;
-            }
-#if PRETTY
-            ast_dump_expression(stmt->rvalue);
-#else
-            INDENT(indent_level + 1);
-            printf("rvalue:\n");
-            ast_dump_expression(stmt->rvalue, indent_level + 2);
-#endif
-            break;
-
-        case AST_STMT_EXPRESSION:
-#if PRETTY
-            ast_dump_expression(stmt->expression);
-#else
-            printf("expression:\n");
-            ast_dump_expression(stmt->expression, indent_level + 1);
-#endif
-            break;
-        }
-
-#if PRETTY
-        printf("\n");
-#endif
-    }
-}
-
-static void ast_dump_subroutine(ASTSubroutine *sub) {
-    assert(sub != NULL);
-
-    switch (sub->kind) {
-    case AST_SUB_FUNCTION:
-        printf("FONCTION %s(", sub->name);
-        for (size_t i = 0; i < sub->parameters.len; i++) {
-            if (i != 0)
-                printf(", ");
-            ASTSubroutineParameter *param = sub->parameters.elems[i];
-            printf("%s : %s", param->decl.variable.name, param->decl.type.name);
-        }
-        printf("): %s\n", sub->return_type.name);
-        break;
-
-    case AST_SUB_PROCEDURE:
-        printf("PROCÉDURE %s(", sub->name);
-        for (size_t i = 0; i < sub->parameters.len; i++) {
-            if (i != 0)
-                printf(", ");
-            ASTSubroutineParameter *param = sub->parameters.elems[i];
-            switch (param->kind) {
-            case AST_PARAM_IN:
-                printf("E ");
-                break;
-            case AST_PARAM_OUT:
-                printf("S ");
-                break;
-            case AST_PARAM_IN_OUT:
-                printf("ES ");
-                break;
-            }
-            printf("%s : %s", param->decl.variable.name, param->decl.type.name);
-        }
-        printf(")\n");
-        break;
-    }
-
-    ast_dump_variables(sub->variables);
-
-    printf("DÉBUT\n");
-    ast_dump_statements(sub->statements, 1);
-    printf("FIN\n");
-}
-
-void ast_dump(ASTProgram *ast) {
+json_t *ast_json(ASTProg *ast) {
     assert(ast != NULL);
+    return json_pack("{s:o, s:s, s:o, s:o, s:o}",
+                     "loc", ast_loc_json(ast->loc),
+                     "name", ast->name,
+                     "subs", ARRAY(ast->nsubs, ast->subs, ast_sub_json),
+                     "vars", ARRAY(ast->nvars, ast->vars, ast_decl_json),
+                     "stmts", ARRAY(ast->nstmts, ast->stmts, ast_stmt_json));
+}
 
-    printf(
-#if PRETTY
-           "PROGRAMME"
+static json_t *ast_loc_json(ASTLoc loc) {
+#if COMPACT_LOC
+    return json_sprintf("%zu,%zu-%zu,%zu", loc.sl, loc.sc, loc.el, loc.ec);
 #else
-           "program:"
+#define F(X) #X, loc.X
+    return json_pack("{s:i, s:i, s:i, s:i}", F(sl), F(sc), F(el), F(ec));
+#undef F
 #endif
-           " %s\n", ast->name);
+}
 
-#if PRETTY
-    if (ast->subroutines.len > 0)
-        printf("\n");
-#else
-    printf("subroutines:\n");
-#endif
-    for (size_t i = 0; i < ast->subroutines.len; i++) {
-        ast_dump_subroutine(ast->subroutines.elems[i]);
-        printf("\n");
+static json_t *ast_sub_json(ASTSub *sub) {
+    assert(sub != NULL);
+    char *kind[] = {
+        [AST_SUB_FUNC] = "function",
+        [AST_SUB_PROC] = "procedure",
+    };
+    json_t *j = json_pack("{s:o, s:s, s:s, s:o, s:o, s:o}",
+                          "loc", ast_loc_json(sub->loc),
+                          "name", sub->name,
+                          "kind", kind[sub->kind],
+                          "params", ARRAY(sub->nparams, sub->params, ast_sub_param_json),
+                          "vars", ARRAY(sub->nvars, sub->vars, ast_decl_json),
+                          "stmts", ARRAY(sub->nstmts, sub->stmts, ast_stmt_json));
+    if (sub->kind == AST_SUB_FUNC) {
+        int err = json_object_set_new(j, "rtype", ast_type_json(sub->rtype));
+        assert(err == 0);
     }
+    return j;
+}
 
-    ast_dump_variables(ast->variables);
+static json_t *ast_decl_json(ASTVarDecl *decl) {
+    assert(decl != NULL);
+    return json_pack("{s:o, s:o, s:o}",
+                     "loc", ast_loc_json(decl->loc),
+                     "var", ast_var_json(decl->var),
+                     "type", ast_type_json(decl->type));
+}
 
-#if PRETTY
-    printf("DÉBUT\n");
-#else
-    printf("statements:\n");
-#endif
-    ast_dump_statements(ast->statements, 1);
-#if PRETTY
-    printf("FIN\n");
-#endif
+static json_t *ast_stmt_json(ASTStmt *stmt) {
+    assert(stmt != NULL);
+    json_t *j = json_pack("{s:o}", "loc", ast_loc_json(stmt->loc));
+    switch (stmt->kind) {
+    case AST_STMT_ASSIGNMENT:
+        json_object_set_new(j, "lval", ast_lval_json(stmt->lval));
+        json_object_set_new(j, "rval", ast_expr_json(stmt->rval));
+        break;
+    case AST_STMT_EXPR:
+        json_object_set_new(j, "expr", ast_expr_json(stmt->expr));
+        break;
+    case AST_STMT_IF:
+        json_object_set_new(j, "if", ast_if_json(stmt->ifb));
+        break;
+    case AST_STMT_WHILE:
+        json_object_set_new(j, "while", ast_while_json(stmt->whileb));
+        break;
+    case AST_STMT_DO_WHILE:
+        json_object_set_new(j, "do while", ast_dowhile_json(stmt->dowhileb));
+        break;
+    case AST_STMT_FOR:
+        json_object_set_new(j, "for", ast_for_json(stmt->forb));
+        break;
+    }
+    return j;
+}
+
+static json_t *ast_lval_json(ASTLval *lval) {
+    assert(lval != NULL);
+    return json_pack("{s:o, s:o}",
+                     "loc", ast_loc_json(lval->loc),
+                     "var", ast_var_json(lval->var));
+}
+
+static json_t *ast_expr_json(ASTExpr *expr) {
+    assert(expr != NULL);
+    json_t *j = json_pack("{s:o}", "loc", ast_loc_json(expr->loc));
+    switch (expr->kind) {
+    case AST_EXPR_INTLIT:
+        json_object_set_new(j, "intlit", json_string(mpz_get_str(NULL, 10, expr->intlit)));
+        break;
+    case AST_EXPR_STRLIT:
+        json_object_set_new(j, "strlit", json_string(expr->strlit));
+        break;
+    case AST_EXPR_BOOLLIT:
+        json_object_set_new(j, "boollit", json_boolean(expr->boollit));
+        break;
+    case AST_EXPR_VAR:
+        json_object_set_new(j, "var", ast_var_json(expr->var));
+        break;
+    case AST_EXPR_BINEXPR:
+        json_object_set_new(j, "binexpr", ast_binexpr_json(expr->binexpr));
+        break;
+    case AST_EXPR_CALL:
+        json_object_set_new(j, "subname", json_string(expr->subname));
+        json_object_set_new(j, "args", ARRAY(expr->nargs, expr->args, ast_expr_json));
+        break;
+    }
+    return j;
+}
+
+static json_t *ast_binexpr_json(ASTBinExpr *expr) {
+    assert(expr != NULL);
+    char *op[] = {
+        [AST_OP_ADD] = "+",
+        [AST_OP_SUB] = "-",
+        [AST_OP_MUL] = "*",
+        [AST_OP_DIV] = "div",
+        [AST_OP_MOD] = "mod",
+        [AST_OP_AND] = "and",
+        [AST_OP_OR] = "or",
+        [AST_OP_EQ] = "=",
+        [AST_OP_NEQ] = "!=",
+        [AST_OP_GT] = ">",
+        [AST_OP_LT] = "<",
+        [AST_OP_GE] = ">=",
+        [AST_OP_LE] = "<=",
+    };
+    return json_pack("{s:o, s:s, s:o, s:o}",
+                     "loc", ast_loc_json(expr->loc),
+                     "op", op[expr->op],
+                     "left", ast_expr_json(expr->left),
+                     "right", ast_expr_json(expr->right));
+}
+
+static json_t *ast_if_json(ASTIfElseBlock *b) {
+    assert(b != NULL);
+    return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
+}
+
+static json_t *ast_while_json(ASTWhileBlock *b) {
+    assert(b != NULL);
+    return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
+}
+
+static json_t *ast_dowhile_json(ASTDoWhileBlock *b) {
+    assert(b != NULL);
+    return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
+}
+
+static json_t *ast_for_json(ASTForBlock *b) {
+    assert(b != NULL);
+    return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
+}
+
+
+static json_t *ast_sub_param_json(ASTSubParam *param) {
+    assert(param != NULL);
+    char *kind[] = {
+        [AST_PARAM_IN] = "in",
+        [AST_PARAM_OUT] = "out",
+        [AST_PARAM_IN_OUT] = "in out",
+    };
+    return json_pack("{s:o, s:s, s:o}",
+                     "loc", ast_loc_json(param->loc),
+                     "kind", kind[param->kind],
+                     "decl", ast_decl_json(param->decl));
+}
+
+static json_t *ast_type_json(ASTType *type) {
+    assert(type != NULL);
+    return json_pack("{s:o, s:s}", "loc", ast_loc_json(type->loc), "name", type->name);
+}
+
+static json_t *ast_var_json(ASTVar *var) {
+    assert(var != NULL);
+    return json_pack("{s:o, s:s}", "loc", ast_loc_json(var->loc), "name", var->name);
 }

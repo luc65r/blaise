@@ -7,7 +7,7 @@ CFLAGS += -ggdb
 CFLAGS += -Wall -Wextra -Werror
 CFLAGS += -Wno-error=unused-function
 CFLAGS += -MMD -MP
-LDFLAGS := -lunistring -lgmp
+LDFLAGS := -lunistring -lgmp -ljansson
 FLEX := flex
 FFLAGS :=
 BISON := bison

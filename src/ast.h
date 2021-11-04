@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gmp.h>
+#include <jansson.h>
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -221,4 +222,5 @@ typedef struct {
     ASTStmt **stmts;
 } ASTProg;
 
-void ast_dump(ASTProg *ast);
+//void ast_pretty_print(FILE *f, ASTProg *ast);
+json_t *ast_json(ASTProg *ast);

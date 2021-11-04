@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,14 +11,17 @@
 #include "parse.h"
 #include "scan.h"
 
-extern ASTProgram *ast;
+extern ASTProg *ast;
 
 int main(void) {
     yyin = stdin;
     yyparse();
 
-    //ast_dump(ast);
-    eval(ast);
+    json_t *j = ast_json(ast);
+    //eval(ast);
+
+    json_dumpf(j, stdout, JSON_INDENT(2));
+    puts("");
 
     return 0;
 }

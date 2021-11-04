@@ -14,6 +14,7 @@
           bison
           libunistring
           gmp
+          jansson
         ];
       };
     });

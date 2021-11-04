@@ -1,8 +1,8 @@
 PROGRAMME Test
 VARIABLES
-    a : Entier
+    n : Entier
 DÉBUT
-    a ← 12 * 4322156432
-    a <- 6 * a + 2 * 64 DIV 8 - 6
-    écrire("a = " + a)
+    n ← 12 * 4322156432
+    n <- 6 * n + 2 * 64 DIV 8 - 6
+    écrire("n = " + n)
 FIN
