@@ -4,8 +4,8 @@ CC := gcc
 CFLAGS := -std=gnu11
 CFLAGS += -Og -march=native
 CFLAGS += -ggdb
-CFLAGS += -Wall -Wextra -Werror
-CFLAGS += -Wno-error=unused-function
+CFLAGS += -Wall -Wextra
+CFLAGS += -Werror=switch
 CFLAGS += -MMD -MP
 LDFLAGS := -lunistring -lgmp -ljansson
 FLEX := flex
