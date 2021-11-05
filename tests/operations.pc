@@ -1,0 +1,8 @@
+PROGRAMME Test
+VARIABLES
+    n : Entier
+DÉBUT
+    n <- 12 * 4322127149856432
+    n <- 6 * n + 214 * 65169 DIV 15 - 192513 + n
+    écrire(n)
+FIN

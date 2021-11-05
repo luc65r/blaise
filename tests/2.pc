@@ -1,8 +1,0 @@
-PROGRAMME Test
-VARIABLES
-    n : Entier
-DÉBUT
-    n ← 12 * 4322156432
-    n <- 6 * n + 2 * 64 DIV 8 - 6
-    écrire("n = " + n)
-FIN

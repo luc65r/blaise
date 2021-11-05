@@ -47,11 +47,19 @@ $(BUILD_DIR)/parse.c $(BUILD_DIR)/parse.h &: $(SRC_DIR)/parse.y
 	@mkdir -p $(dir $@)
 	$(BISON) $(BFLAGS) -o $(BUILD_DIR)/parse.c --defines=$(BUILD_DIR)/parse.h $<
 
+test_ast: $(BUILD_DIR)/$(TARGET_EXEC)
+	cd tests && ./ast.sh $(abspath $<)
+
+test_eval: $(BUILD_DIR)/$(TARGET_EXEC)
+	cd tests && ./eval.sh $(abspath $<)
+
+test: test_ast test_eval
+
 clean:
 	rm -rf $(BUILD_DIR)
 
 .SUFFIXES:
 
-.PHONY: clean
+.PHONY: clean test_ast test_eval test
 
 -include $(DEPS)
