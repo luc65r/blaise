@@ -3,46 +3,40 @@
 #include <stdlib.h>
 
 #include "ast.h"
+#include "utils.h"
 
-#define FDECL(T, A) static void ast_ ## A ## _free(T *a)
-
-#define FSTART(T, A) static void ast_ ## A ## _free(T *a) {  \
+#define FSTART(T, A)                            \
+    void ast_ ## A ## _free(T *a) {             \
     assert(a != NULL);
-#define FEND free(a);                           \
+#define FEND                                    \
+    free(a);                                    \
     }
 
-#define FARRAY(X, Y, F) do {                            \
-        for (size_t _i = 0; _i < (X)->n ## Y; _i++) {   \
-            (F)((X)->Y[_i]);                            \
-        }                                               \
-        free((X)->Y);                                   \
+#define FREE(X)                                 \
+    ast_free(a->X)
+
+#define FARRAY(X) do {                              \
+        for (size_t _i = 0; _i < a->n ## X; _i++) { \
+            ast_free(a->X[_i]);                     \
+        }                                           \
+        free(a->X);                                 \
     } while (0)
 
-FDECL(ASTVar, var);
-FDECL(ASTType, type);
-FDECL(ASTBinExpr, binexpr);
-FDECL(ASTExpr, expr);
-FDECL(ASTLval, lval);
-FDECL(ASTIfElseBlock, if);
-FDECL(ASTWhileBlock, while);
-FDECL(ASTDoWhileBlock, dowhile);
-FDECL(ASTForBlock, for);
-FDECL(ASTStmt, stmt);
-FDECL(ASTVarDecl, decl);
-FDECL(ASTSubParam, param);
-FDECL(ASTSub, sub);
+#define F(X)                                    \
+    FREE(X);
+#define FA(X)                                   \
+    FARRAY(X);
 
 FSTART(ASTVar, var)
-     free(a->name);
+     FREE(name);
 FEND
 
 FSTART(ASTType, type)
-     free(a->name);
+     FREE(name);
 FEND
 
 FSTART(ASTBinExpr, binexpr)
-     ast_expr_free(a->left);
-     ast_expr_free(a->right);
+     FOR_EACH(F, left, right);
 FEND
 
 FSTART(ASTExpr, expr)
@@ -51,19 +45,19 @@ FSTART(ASTExpr, expr)
          mpz_clear(a->intlit);
          break;
      case AST_EXPR_STRLIT:
-         free(a->strlit);
+         FREE(strlit);
          break;
      case AST_EXPR_BOOLLIT:
          break;
      case AST_EXPR_VAR:
-         ast_var_free(a->var);
+         FREE(var);
          break;
      case AST_EXPR_BINEXPR:
-         ast_binexpr_free(a->binexpr);
+         FREE(binexpr);
          break;
      case AST_EXPR_CALL:
-         free(a->subname);
-         FARRAY(a, args, ast_expr_free);
+         FREE(subname);
+         FARRAY(args);
          break;
      }
 FEND
@@ -71,82 +65,75 @@ FEND
 FSTART(ASTLval, lval)
      switch (a->kind) {
      case AST_LVAL_VAR:
-         ast_var_free(a->var);
+         FREE(var);
          break;
      }
 FEND
 
 FSTART(ASTIfElseBlock, if)
      if (a->cond != NULL)
-         ast_expr_free(a->cond);
-     FARRAY(a, stmts, ast_stmt_free);
+         FREE(cond);
+     FARRAY(stmts);
      if (a->elseb != NULL)
-         ast_if_free(a->elseb);
+         FREE(elseb);
 FEND
 
 FSTART(ASTWhileBlock, while)
-     ast_expr_free(a->cond);
-     FARRAY(a, stmts, ast_stmt_free);
+     FREE(cond);
+     FARRAY(stmts);
 FEND
 
 FSTART(ASTDoWhileBlock, dowhile)
-     FARRAY(a, stmts, ast_stmt_free);
-     ast_expr_free(a->cond);
+     FARRAY(stmts);
+     FREE(cond);
 FEND
 
 FSTART(ASTForBlock, for)
-     ast_lval_free(a->iter);
+     FREE(iter);
      mpz_clears(a->from, a->to, NULL);
-     FARRAY(a, stmts, ast_stmt_free);
+     FARRAY(stmts);
 FEND
 
 FSTART(ASTVarDecl, decl)
-     ast_var_free(a->var);
-     ast_type_free(a->type);
+     FOR_EACH(F, var, type);
 FEND
 
 FSTART(ASTSubParam, param)
-     ast_decl_free(a->decl);
+     FREE(decl);
 FEND
 
 FSTART(ASTStmt, stmt)
      switch (a->kind) {
      case AST_STMT_ASSIGNMENT:
-         ast_lval_free(a->lval);
-         ast_expr_free(a->rval);
+         FOR_EACH(F, lval, rval);
          break;
      case AST_STMT_EXPR:
-         ast_expr_free(a->expr);
+         FREE(expr);
          break;
      case AST_STMT_IF:
-         ast_if_free(a->ifb);
+         FREE(ifb);
          break;
      case AST_STMT_WHILE:
-         ast_while_free(a->whileb);
+         FREE(whileb);
          break;
      case AST_STMT_DO_WHILE:
-         ast_dowhile_free(a->dowhileb);
+         FREE(dowhileb);
          break;
      case AST_STMT_FOR:
-         ast_for_free(a->forb);
+         FREE(forb);
          break;
      }
 FEND
 
 FSTART(ASTSub, sub)
-     free(a->name);
-     FARRAY(a, params, ast_param_free);
+     FREE(name);
+     FARRAY(params);
      if (a->kind == AST_SUB_FUNC)
-         ast_type_free(a->rtype);
-     FARRAY(a, vars, ast_decl_free);
-     FARRAY(a, stmts, ast_stmt_free);
+         FREE(rtype);
+     FOR_EACH(FA, vars, stmts);
 FEND
 
-void ast_free(ASTProg *ast) {
-    assert(ast != NULL);
-    free(ast->name);
-    FARRAY(ast, subs, ast_sub_free);
-    FARRAY(ast, vars, ast_decl_free);
-    FARRAY(ast, stmts, ast_stmt_free);
-    free(ast);
-}
+FSTART(ASTProg, prog)
+    FREE(name);
+    FOR_EACH(FA, subs, vars, stmts);
+FEND

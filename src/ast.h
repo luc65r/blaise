@@ -5,19 +5,29 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#define AST_STRUCTS(X) \
+    X(ASTVar, var) X(ASTType, type) X(ASTBinExpr, binexpr) X(ASTExpr, expr) X(ASTLval, lval) X(ASTStmt, stmt) \
+    X(ASTIfElseBlock, if) X(ASTWhileBlock, while) X(ASTDoWhileBlock, dowhile) X(ASTForBlock, for) \
+    X(ASTVarDecl, decl) X(ASTSubParam, param) X(ASTSub, sub) X(ASTProg, prog)
+
+#define X(T, N) \
+    typedef struct T T;
+AST_STRUCTS(X)
+#undef X
+
 typedef struct {
     size_t sl, sc, el, ec;
 } ASTLoc;
 
-typedef struct {
+struct ASTVar {
     ASTLoc loc;
     char *name;
-} ASTVar;
+};
 
-typedef struct {
+struct ASTType {
     ASTLoc loc;
     char *name;
-} ASTType;
+};
 
 typedef enum {
     AST_OP_ADD,
@@ -34,9 +44,6 @@ typedef enum {
     AST_OP_GE,
     AST_OP_LE,
 } ASTBinOp;
-
-typedef struct ASTExpr ASTExpr;
-typedef struct ASTBinExpr ASTBinExpr;
 
 struct ASTBinExpr {
     ASTLoc loc;
@@ -80,17 +87,14 @@ typedef enum {
     AST_LVAL_VAR,
 } ASTLvalKind;
 
-typedef struct {
+struct ASTLval {
     ASTLoc loc;
 
     ASTLvalKind kind;
     union {
         ASTVar *var;
     };
-} ASTLval;
-
-typedef struct ASTStmt ASTStmt;
-typedef struct ASTIfElseBlock ASTIfElseBlock;
+};
 
 struct ASTIfElseBlock {
     ASTLoc loc;
@@ -105,25 +109,25 @@ struct ASTIfElseBlock {
     ASTIfElseBlock *elseb;
 };
 
-typedef struct {
+struct ASTWhileBlock {
     ASTLoc loc;
 
     ASTExpr *cond;
 
     size_t nstmts;
     ASTStmt **stmts;
-} ASTWhileBlock;
+};
 
-typedef struct {
+struct ASTDoWhileBlock {
     ASTLoc loc;
 
     size_t nstmts;
     ASTStmt **stmts;
 
     ASTExpr *cond;
-} ASTDoWhileBlock;
+};
 
-typedef struct {
+struct ASTForBlock {
     ASTLoc loc;
 
     ASTLval *iter;
@@ -132,7 +136,7 @@ typedef struct {
 
     size_t nstmts;
     ASTStmt **stmts;
-} ASTForBlock;
+};
 
 typedef enum {
     AST_STMT_ASSIGNMENT,
@@ -162,12 +166,12 @@ struct ASTStmt {
     };
 };
 
-typedef struct {
+struct ASTVarDecl {
     ASTLoc loc;
 
     ASTVar *var;
     ASTType *type;
-} ASTVarDecl;
+};
 
 typedef enum {
     AST_PARAM_IN,
@@ -175,19 +179,19 @@ typedef enum {
     AST_PARAM_IN_OUT,
 } ASTSubParamKind;
 
-typedef struct {
+struct ASTSubParam {
     ASTLoc loc;
 
     ASTSubParamKind kind;
     ASTVarDecl *decl;
-} ASTSubParam;
+};
 
 typedef enum {
     AST_SUB_FUNC,
     AST_SUB_PROC,
 } ASTSubKind;
 
-typedef struct {
+struct ASTSub {
     ASTLoc loc;
 
     char *name;
@@ -205,9 +209,9 @@ typedef struct {
 
     size_t nstmts;
     ASTStmt **stmts;
-} ASTSub;
+};
 
-typedef struct {
+struct ASTProg {
     ASTLoc loc;
 
     char *name;
@@ -220,8 +224,18 @@ typedef struct {
 
     size_t nstmts;
     ASTStmt **stmts;
-} ASTProg;
+};
+
+#define X(T, N) \
+    void ast_ ## N ## _free(T *);
+AST_STRUCTS(X)
+#undef X
+
+#define _AST_FREE_GENERIC(T, N) \
+    T *: ast_ ## N ## _free,
+
+#define ast_free(A) \
+    _Generic((A), AST_STRUCTS(_AST_FREE_GENERIC) char *: free)(A)
 
 //void ast_pretty_print(FILE *f, ASTProg *ast);
 json_t *ast_json(ASTProg *ast);
-void ast_free(ASTProg *ast);
