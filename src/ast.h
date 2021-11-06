@@ -237,5 +237,16 @@ AST_STRUCTS(X)
 #define ast_free(A) \
     _Generic((A), AST_STRUCTS(_AST_FREE_GENERIC) char *: free)(A)
 
+json_t *ast_loc_json(ASTLoc);
+#define X(T, N) \
+    json_t *ast_ ## N ## _json(T *);
+AST_STRUCTS(X)
+#undef X
+
+#define _AST_JSON_GENERIC(T, N) \
+    T *: ast_ ## N ## _json,
+
+#define ast_json(A) \
+    _Generic((A), AST_STRUCTS(_AST_JSON_GENERIC) ASTLoc: ast_loc_json)(A)
+
 //void ast_pretty_print(FILE *f, ASTProg *ast);
-json_t *ast_json(ASTProg *ast);

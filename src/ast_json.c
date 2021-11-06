@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <gmp.h>
 #include <jansson.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "ast.h"
@@ -20,22 +19,7 @@
             _ja;                                                    \
         })
 
-static json_t *ast_loc_json(ASTLoc loc);
-static json_t *ast_sub_json(ASTSub *sub);
-static json_t *ast_decl_json(ASTVarDecl *decl);
-static json_t *ast_stmt_json(ASTStmt *stmt);
-static json_t *ast_lval_json(ASTLval *lval);
-static json_t *ast_expr_json(ASTExpr *expr);
-static json_t *ast_binexpr_json(ASTBinExpr *expr);
-static json_t *ast_if_json(ASTIfElseBlock *b);
-static json_t *ast_while_json(ASTWhileBlock *b);
-static json_t *ast_dowhile_json(ASTDoWhileBlock *b);
-static json_t *ast_for_json(ASTForBlock *b);
-static json_t *ast_sub_param_json(ASTSubParam *param);
-static json_t *ast_type_json(ASTType *type);
-static json_t *ast_var_json(ASTVar *var);
-
-json_t *ast_json(ASTProg *ast) {
+json_t *ast_prog_json(ASTProg *ast) {
     assert(ast != NULL);
     return json_pack("{s:o, s:s, s:o, s:o, s:o}",
                      "loc", ast_loc_json(ast->loc),
@@ -45,7 +29,7 @@ json_t *ast_json(ASTProg *ast) {
                      "stmts", ARRAY(ast->nstmts, ast->stmts, ast_stmt_json));
 }
 
-static json_t *ast_loc_json(ASTLoc loc) {
+json_t *ast_loc_json(ASTLoc loc) {
 #if COMPACT_LOC
     return json_sprintf("%zu,%zu-%zu,%zu", loc.sl, loc.sc, loc.el, loc.ec);
 #else
@@ -55,7 +39,7 @@ static json_t *ast_loc_json(ASTLoc loc) {
 #endif
 }
 
-static json_t *ast_sub_json(ASTSub *sub) {
+json_t *ast_sub_json(ASTSub *sub) {
     assert(sub != NULL);
     char *kind[] = {
         [AST_SUB_FUNC] = "function",
@@ -65,7 +49,7 @@ static json_t *ast_sub_json(ASTSub *sub) {
                           "loc", ast_loc_json(sub->loc),
                           "name", sub->name,
                           "kind", kind[sub->kind],
-                          "params", ARRAY(sub->nparams, sub->params, ast_sub_param_json),
+                          "params", ARRAY(sub->nparams, sub->params, ast_param_json),
                           "vars", ARRAY(sub->nvars, sub->vars, ast_decl_json),
                           "stmts", ARRAY(sub->nstmts, sub->stmts, ast_stmt_json));
     if (sub->kind == AST_SUB_FUNC) {
@@ -75,7 +59,7 @@ static json_t *ast_sub_json(ASTSub *sub) {
     return j;
 }
 
-static json_t *ast_decl_json(ASTVarDecl *decl) {
+json_t *ast_decl_json(ASTVarDecl *decl) {
     assert(decl != NULL);
     return json_pack("{s:o, s:o, s:o}",
                      "loc", ast_loc_json(decl->loc),
@@ -83,7 +67,7 @@ static json_t *ast_decl_json(ASTVarDecl *decl) {
                      "type", ast_type_json(decl->type));
 }
 
-static json_t *ast_stmt_json(ASTStmt *stmt) {
+json_t *ast_stmt_json(ASTStmt *stmt) {
     assert(stmt != NULL);
     json_t *j = json_pack("{s:o}", "loc", ast_loc_json(stmt->loc));
     switch (stmt->kind) {
@@ -110,14 +94,14 @@ static json_t *ast_stmt_json(ASTStmt *stmt) {
     return j;
 }
 
-static json_t *ast_lval_json(ASTLval *lval) {
+json_t *ast_lval_json(ASTLval *lval) {
     assert(lval != NULL);
     return json_pack("{s:o, s:o}",
                      "loc", ast_loc_json(lval->loc),
                      "var", ast_var_json(lval->var));
 }
 
-static json_t *ast_expr_json(ASTExpr *expr) {
+json_t *ast_expr_json(ASTExpr *expr) {
     assert(expr != NULL);
     json_t *j = json_pack("{s:o}", "loc", ast_loc_json(expr->loc));
     switch (expr->kind) {
@@ -148,7 +132,7 @@ static json_t *ast_expr_json(ASTExpr *expr) {
     return j;
 }
 
-static json_t *ast_binexpr_json(ASTBinExpr *expr) {
+json_t *ast_binexpr_json(ASTBinExpr *expr) {
     assert(expr != NULL);
     char *op[] = {
         [AST_OP_ADD] = "+",
@@ -172,28 +156,28 @@ static json_t *ast_binexpr_json(ASTBinExpr *expr) {
                      "right", ast_expr_json(expr->right));
 }
 
-static json_t *ast_if_json(ASTIfElseBlock *b) {
+json_t *ast_if_json(ASTIfElseBlock *b) {
     assert(b != NULL);
     return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
 }
 
-static json_t *ast_while_json(ASTWhileBlock *b) {
+json_t *ast_while_json(ASTWhileBlock *b) {
     assert(b != NULL);
     return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
 }
 
-static json_t *ast_dowhile_json(ASTDoWhileBlock *b) {
+json_t *ast_dowhile_json(ASTDoWhileBlock *b) {
     assert(b != NULL);
     return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
 }
 
-static json_t *ast_for_json(ASTForBlock *b) {
+json_t *ast_for_json(ASTForBlock *b) {
     assert(b != NULL);
     return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
 }
 
 
-static json_t *ast_sub_param_json(ASTSubParam *param) {
+json_t *ast_param_json(ASTSubParam *param) {
     assert(param != NULL);
     char *kind[] = {
         [AST_PARAM_IN] = "in",
@@ -206,12 +190,12 @@ static json_t *ast_sub_param_json(ASTSubParam *param) {
                      "decl", ast_decl_json(param->decl));
 }
 
-static json_t *ast_type_json(ASTType *type) {
+json_t *ast_type_json(ASTType *type) {
     assert(type != NULL);
     return json_pack("{s:o, s:s}", "loc", ast_loc_json(type->loc), "name", type->name);
 }
 
-static json_t *ast_var_json(ASTVar *var) {
+json_t *ast_var_json(ASTVar *var) {
     assert(var != NULL);
     return json_pack("{s:o, s:s}", "loc", ast_loc_json(var->loc), "name", var->name);
 }
