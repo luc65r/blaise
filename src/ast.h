@@ -145,6 +145,7 @@ typedef enum {
     AST_STMT_WHILE,
     AST_STMT_DO_WHILE,
     AST_STMT_FOR,
+    AST_STMT_RETURN,
 } ASTStmtKind;
 
 struct ASTStmt {
@@ -152,11 +153,14 @@ struct ASTStmt {
 
     ASTStmtKind kind;
     union {
+        /* AST_STMT_ASSIGNMENT */
         struct {
             ASTLval *lval;
             ASTExpr *rval;
         };
 
+        /* AST_STMT_EXPR
+           AST_STMT_RETURN */
         ASTExpr *expr;
 
         ASTIfElseBlock *ifb;

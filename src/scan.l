@@ -90,6 +90,7 @@ UPDATE_LOCATION();
 {T}{A}{N}{T} return TOKEN_WHILE;
 {Q}{U}{E} return TOKEN_QUE;
 {R}{EACUTE}{P}{EACUTE}{T}{E}{R} return TOKEN_REPEAT;
+{R}{E}{T}{O}{U}{R}{N}{E}{R} return TOKEN_RETURN;
 {V}{R}{A}{I} return TOKEN_TRUE;
 {F}{A}{U}{X} return TOKEN_FALSE;
 "<-"|"←" return TOKEN_ASSIGNMENT;

@@ -122,6 +122,9 @@ FSTART(ASTStmt, stmt)
      case AST_STMT_FOR:
          FREE(forb);
          break;
+     case AST_STMT_RETURN:
+         FREE(expr);
+         break;
      }
 FEND
 

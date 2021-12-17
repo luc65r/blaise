@@ -90,6 +90,9 @@ json_t *ast_stmt_json(ASTStmt *stmt) {
     case AST_STMT_FOR:
         json_object_set_new(j, "for", ast_for_json(stmt->forb));
         break;
+    case AST_STMT_RETURN:
+        json_object_set_new(j, "return", ast_expr_json(stmt->expr));
+        break;
     }
     return j;
 }

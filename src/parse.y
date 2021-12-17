@@ -77,7 +77,7 @@ void yyerror(const char *s);
 
 %token PROGRAM FUNCTION PROCEDURE VARIABLES BEGIN END
 %token IF THEN ELSE FOR FROM TO DO WHILE
-%token QUE REPEAT TRUE FALSE
+%token QUE REPEAT RETURN TRUE FALSE
 %token EQ NEQ LE LT GE GT
 %token ASSIGNMENT LPAREN RPAREN COMMA COLON
 %token PLUS MINUS STAR DIV MOD
@@ -170,6 +170,7 @@ statement
                                                 .kind = AST_STMT_ASSIGNMENT,
                                                 .lval = $1, .rval = $3); }
     | expression { $$ = ALLOC(ASTStmt, @$, .kind = AST_STMT_EXPR, .expr = $1); }
+    | RETURN expression { $$ = ALLOC(ASTStmt, @$, .kind = AST_STMT_RETURN, .expr = $2); }
     ;
 
 subroutine_parameter_sequence
