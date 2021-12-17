@@ -1,0 +1,12 @@
+PROGRAMME Test
+DÉBUT
+    écrire("avant Si")
+    Si 2 > 3 Alors
+        écrire("dans Si")
+    Sinon Si 3 > 3 Alors
+        écrire("dans Sinon Si")
+    Sinon
+        écrire("dans Sinon")
+    Fin Si
+    écrire("après Si")
+FIN

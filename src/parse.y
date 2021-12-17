@@ -93,7 +93,7 @@ void yyerror(const char *s);
 %type <forb> for_block
 %type <dowhileb> do_while_block
 %type <whileb> while_block
-%type <ifelseb> if_block
+%type <ifelseb> if_block else_block
 %type <lval> lvalue
 %type <expr> expression
 %type <binexpr> binary_expression
@@ -179,9 +179,18 @@ statement
     ;
 
 if_block
-    : IF expression THEN statement_sequence END IF
-      { // TODO: ELSE
-          $$ = ALLOC(ASTIfElseBlock, @$, .cond = $2, SVEC(ASTStmt, stmts, $4), .elseb = NULL);
+    : IF expression THEN statement_sequence else_block
+      {
+          $$ = ALLOC(ASTIfElseBlock, @$, .cond = $2, SVEC(ASTStmt, stmts, $4), .elseb = $5);
+      }
+    ;
+
+else_block
+    : END IF { $$ = NULL; }
+    | ELSE if_block { $$ = $2; }
+    | ELSE statement_sequence END IF
+      {
+          $$ = ALLOC(ASTIfElseBlock, @$, .cond = NULL, SVEC(ASTStmt, stmts, $2), .elseb = NULL);
       }
     ;
 
@@ -200,12 +209,9 @@ do_while_block
     ;
 
 for_block
-    : FOR lvalue FROM integer_litteral TO integer_litteral DO statement_sequence END FOR
+    : FOR lvalue FROM expression TO expression DO statement_sequence END FOR
       {
-          $$ = ALLOC(ASTForBlock, @$, .iter = $2, SVEC(ASTStmt, stmts, $8));
-          mpz_init_set($$->from, $4);
-          mpz_init_set($$->to, $6);
-          mpz_clears($4, $6, NULL);
+          $$ = ALLOC(ASTForBlock, @$, .iter = $2, .from = $4, .to = $6, SVEC(ASTStmt, stmts, $8));
       }
     ;
 

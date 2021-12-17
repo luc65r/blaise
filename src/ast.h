@@ -131,8 +131,8 @@ struct ASTForBlock {
     ASTLoc loc;
 
     ASTLval *iter;
-    mpz_t from;
-    mpz_t to;
+    ASTExpr *from;
+    ASTExpr *to;
 
     size_t nstmts;
     ASTStmt **stmts;

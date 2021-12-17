@@ -161,24 +161,40 @@ json_t *ast_binexpr_json(ASTBinExpr *expr) {
 
 json_t *ast_if_json(ASTIfElseBlock *b) {
     assert(b != NULL);
-    return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
+    json_t *j = json_pack("{s:o}", "loc", ast_loc_json(b->loc));
+    if (b->cond != NULL)
+        json_object_set_new(j, "cond", ast_expr_json(b->cond));
+    json_object_set_new(j, "stmts", ARRAY(b->nstmts, b->stmts, ast_stmt_json));
+    if (b->elseb != NULL)
+        json_object_set_new(j, "else", ast_if_json(b->elseb));
+    return j;
 }
 
 json_t *ast_while_json(ASTWhileBlock *b) {
     assert(b != NULL);
-    return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
+    return json_pack("{s:o, s:o, s:o}",
+                     "loc", ast_loc_json(b->loc),
+                     "cond", ast_expr_json(b->cond),
+                     "stmts", ARRAY(b->nstmts, b->stmts, ast_stmt_json));
 }
 
 json_t *ast_dowhile_json(ASTDoWhileBlock *b) {
     assert(b != NULL);
-    return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
+    return json_pack("{s:o, s:o, s:o}",
+                     "loc", ast_loc_json(b->loc),
+                     "stmts", ARRAY(b->nstmts, b->stmts, ast_stmt_json),
+                     "cond", ast_expr_json(b->cond));
 }
 
 json_t *ast_for_json(ASTForBlock *b) {
     assert(b != NULL);
-    return json_pack("{s:o}", "loc", ast_loc_json(b->loc));
+    return json_pack("{s:o, s:o, s:o, s:o, s:o}",
+                     "loc", ast_loc_json(b->loc),
+                     "iter", ast_lval_json(b->iter),
+                     "from", ast_expr_json(b->from),
+                     "to", ast_expr_json(b->to),
+                     "stmts", ARRAY(b->nstmts, b->stmts, ast_stmt_json));
 }
-
 
 json_t *ast_param_json(ASTSubParam *param) {
     assert(param != NULL);

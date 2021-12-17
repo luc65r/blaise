@@ -90,7 +90,8 @@ FEND
 
 FSTART(ASTForBlock, for)
      FREE(iter);
-     mpz_clears(a->from, a->to, NULL);
+     FREE(from);
+     FREE(to);
      FARRAY(stmts);
 FEND
 
