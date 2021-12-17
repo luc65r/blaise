@@ -1,4 +1,4 @@
-TARGET_EXEC := pc
+TARGET_EXEC := blaise
 
 CC := gcc
 CFLAGS := -std=gnu11

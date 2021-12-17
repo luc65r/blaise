@@ -1,8 +1,6 @@
-# pseudocode\* (pc)
+# blaise
 
-\*I still have to find a good name for it
-
-`pc` is an interpretor for a french pascal-flavored pseudocode.
+`blaise` is an interpretor for a french pascal-flavored pseudocode.
 
 ## Is it any good?
 
