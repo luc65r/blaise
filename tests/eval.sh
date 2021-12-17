@@ -9,9 +9,9 @@ exe="$1"
 
 err=0
 for f in ./*.out; do
-    pc="${f%.out}.pc"
-    printf '%s ' "${pc#./}"
-    output="$($exe "$pc" 2> /dev/null)" || {
+    p="${f%.out}.bl"
+    printf '%s ' "${p#./}"
+    output="$($exe "$p" 2> /dev/null)" || {
         printf "\e[31merror: couldn't execute\e[m\n"
         err=1
         continue

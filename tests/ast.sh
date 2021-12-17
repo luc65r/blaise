@@ -14,9 +14,9 @@ exe="$1"
 
 err=0
 for f in ./*.json; do
-    pc="${f%.json}.pc"
-    printf '%s ' "${pc#./}"
-    output="$($exe -a "$pc" 2> /dev/null)" || {
+    p="${f%.json}.bl"
+    printf '%s ' "${p#./}"
+    output="$($exe -a "$p" 2> /dev/null)" || {
         printf "\e[31merror: parsing failed\e[m\n"
         err=1
         continue
