@@ -80,7 +80,7 @@ UPDATE_LOCATION();
 {F}{O}{N}{C}{T}{I}{O}{N} return TOKEN_FUNCTION;
 {P}{R}{O}{C}{EACUTE}{D}{U}{R}{E} return TOKEN_PROCEDURE;
 {V}{A}{R}{I}{A}{B}{L}{E}{S} return TOKEN_VARIABLES;
-{I}{F} return TOKEN_IF;
+{S}{I} return TOKEN_IF;
 {A}{L}{O}{R}{S} return TOKEN_THEN;
 {S}{I}{N}{O}{N} return TOKEN_ELSE;
 {P}{O}{U}{R} return TOKEN_FOR;

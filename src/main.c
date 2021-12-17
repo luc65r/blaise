@@ -31,13 +31,14 @@ static char args_doc[] = "[FILE]";
 IGNORE_MISSING_FIELD (
 static struct argp_option options[] = {
     { "ast", 'a', 0, 0, "Dump abstract syntax tree" },
+    { "debug", 'd', 0, 0, "Debug parsing" },
     { 0 }
 };
 )
 
 struct args {
     char *file;
-    bool ast;
+    bool ast, debug_parsing;
 };
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
@@ -45,6 +46,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     switch (key) {
     case 'a':
         args->ast = true;
+        break;
+    case 'd':
+        args->debug_parsing = true;
         break;
     case ARGP_KEY_ARG:
         if (state->arg_num >= 1)
@@ -68,6 +72,7 @@ int main(int argc, char **argv) {
     struct args args = {
         .file = "-",
         .ast = false,
+        .debug_parsing = false,
     };
 
     argp_parse(&argp, argc, argv, 0, 0, &args);
@@ -81,6 +86,8 @@ int main(int argc, char **argv) {
     }
 
     yyin = f;
+    if (args.debug_parsing)
+        yydebug = 1;
     err = yyparse();
     if (err)
         goto error;

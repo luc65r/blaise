@@ -90,10 +90,10 @@ void yyerror(const char *s);
 %type <subparam> subroutine_parameter
 %type <decl> variable_decl
 %type <stmt> statement
-//%type <forb>
-//%type <dowhileb>
-//%type <whileb>
-//%type <ifelseb>
+%type <forb> for_block
+%type <dowhileb> do_while_block
+%type <whileb> while_block
+%type <ifelseb> if_block
 %type <lval> lvalue
 %type <expr> expression
 %type <binexpr> binary_expression
@@ -166,11 +166,47 @@ statement_sequence
     ;
 
 statement
-    : lvalue ASSIGNMENT expression { $$ = ALLOC(ASTStmt, @$,
-                                                .kind = AST_STMT_ASSIGNMENT,
-                                                .lval = $1, .rval = $3); }
+    : lvalue ASSIGNMENT expression
+      {
+        $$ = ALLOC(ASTStmt, @$, .kind = AST_STMT_ASSIGNMENT, .lval = $1, .rval = $3);
+      }
     | expression { $$ = ALLOC(ASTStmt, @$, .kind = AST_STMT_EXPR, .expr = $1); }
     | RETURN expression { $$ = ALLOC(ASTStmt, @$, .kind = AST_STMT_RETURN, .expr = $2); }
+    | if_block { $$ = ALLOC(ASTStmt, @$, .kind = AST_STMT_IF, .ifb = $1); }
+    | while_block { $$ = ALLOC(ASTStmt, @$, .kind = AST_STMT_WHILE, .whileb = $1); }
+    | do_while_block { $$ = ALLOC(ASTStmt, @$, .kind = AST_STMT_DO_WHILE, .dowhileb = $1); }
+    | for_block { $$ = ALLOC(ASTStmt, @$, .kind = AST_STMT_FOR, .forb = $1); }
+    ;
+
+if_block
+    : IF expression THEN statement_sequence END IF
+      { // TODO: ELSE
+          $$ = ALLOC(ASTIfElseBlock, @$, .cond = $2, SVEC(ASTStmt, stmts, $4), .elseb = NULL);
+      }
+    ;
+
+while_block
+    : WHILE QUE expression DO statement_sequence END WHILE QUE
+      {
+          $$ = ALLOC(ASTWhileBlock, @$, .cond = $3, SVEC(ASTStmt, stmts, $5));
+      }
+    ;
+
+do_while_block
+    : REPEAT statement_sequence WHILE QUE expression
+      {
+          $$ = ALLOC(ASTDoWhileBlock, @$, .cond = $5, SVEC(ASTStmt, stmts, $2));
+      }
+    ;
+
+for_block
+    : FOR lvalue FROM integer_litteral TO integer_litteral DO statement_sequence END FOR
+      {
+          $$ = ALLOC(ASTForBlock, @$, .iter = $2, SVEC(ASTStmt, stmts, $8));
+          mpz_init_set($$->from, $4);
+          mpz_init_set($$->to, $6);
+          mpz_clears($4, $6, NULL);
+      }
     ;
 
 subroutine_parameter_sequence
