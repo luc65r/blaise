@@ -7,9 +7,11 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
-#include <stdio.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include <gmp.h>
+
+#include "error.h"
 
 typedef struct {
     union {
@@ -36,6 +38,8 @@ typedef struct {
         TOKEN_BEGIN,
         TOKEN_END,
     }type;
+
+    Location loc;
 }Token;
 
 
