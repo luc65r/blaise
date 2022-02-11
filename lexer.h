@@ -8,22 +8,26 @@
 #define LEXER_H
 
 #include <stdio.h>
-#include <stddef.h>
-#include <locale.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#include "token.h"
+
+#define LINE_MAX 1024
 
 typedef struct {
     FILE* fs;
 
-    size_t lineNb;
-    size_t colNb;
+    int line_nb;
+    int line_cursor;
 
     char c;
-    char line[1024];
-    wchar_t rawLine[1024];
+    char line[LINE_MAX];
+    char utf_line[LINE_MAX];
 }Lexer;
 
-Lexer* init_lexer_from_file();
+TokenList* lexer_scan(void);
 
 
 #endif
-
