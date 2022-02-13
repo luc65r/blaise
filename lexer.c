@@ -122,11 +122,7 @@ void get_line(Lexer* lexer)
         if (feof(lexer->fs))
             lexer->c = EOF;
     } else {
-        strcpy(lexer->utf_line, lexer->line);
-        //printf("%s", lexer->line);
-
         lexer_normalize_content(lexer->line);
-        printf("%s", lexer->line);
 
         lexer->line_nb++;
         lexer->line_cursor = 0;
@@ -174,36 +170,62 @@ void lexer_advance_with(Lexer* lexer, TokenList* chunk, int type)
     lexer_advance(lexer);
 }
 
+int lexer_compare(Lexer* lexer, int start, char* comp)
+{
+    if (strlen(comp) != (lexer->line_cursor-start))
+        return 0;
 
+    for (int i = start; i < lexer->line_cursor; i++){
+        if (lexer->line[i] != comp[i+start])
+            return 0;
+    }
+
+    return 0;
+}
+
+void lexer_scan_id(Lexer* lexer, TokenList* chunk)
+{
+    int start = lexer->line_cursor;
+    printf("\nmichel\n");
+
+    while (lexer->c == '_' || (lexer->c > 96 && lexer->c < 123))
+        lexer_advance(lexer);
+
+    if (lexer_compare(lexer, start, "programme")) push_token(chunk, TOKEN_PROGRAM);
+}
 
 TokenList* lexer_scan(void)
 {
     TokenList* res = init_token_list();
 
-    FILE* fs = fopen("../blaise/tests/operations.bl", "r");
+    FILE* fs = fopen("./test/operations.bl", "r");
     Lexer* lexer = init_lexer_from_file(fs);
 
     while (lexer->c != EOF) {
         lexer_skip_whitespace(lexer);
 
-        switch (lexer->c) {
-            //case '\"':
-            //case '/':
-            case '*' : lexer_advance_with(lexer, res, TOKEN_STAR); break;
-            case '+' : lexer_advance_with(lexer, res, TOKEN_PLUS); break;
-            case '-' : lexer_advance_with(lexer, res, TOKEN_MINUS); break;
-            case '=' : lexer_advance_with(lexer, res, TOKEN_EQ); break;
-            case '<' : lexer_advance_with(lexer, res, lexer_check_next(lexer,'-') ? TOKEN_ASSIGN : TOKEN_LT); break;
-            case '>' : lexer_advance_with(lexer, res, TOKEN_GT); break;
-            case ',' : lexer_advance_with(lexer, res, TOKEN_COMMA); break;
-            case ':' : lexer_advance_with(lexer, res, TOKEN_COLON); break;
-            case '(' : lexer_advance_with(lexer, res, TOKEN_LPAREN); break;
-            case ')' : lexer_advance_with(lexer, res, TOKEN_RPAREN); break;
-            case '{' : lexer_advance_with(lexer, res, TOKEN_LBRACKET); break;
-            case '}' : lexer_advance_with(lexer, res, TOKEN_RBRACKET); break;
-            case '[' : lexer_advance_with(lexer, res, TOKEN_LSQBRACKET); break;
-            case ']' : lexer_advance_with(lexer, res, TOKEN_RSQBRACKET); break;
-            default : lexer_advance(lexer);
+        if (lexer->c == '_' || (lexer->c > 96 && lexer->c < 123)) {
+            lexer_scan_id(lexer, res);
+        } else {
+            switch (lexer->c) {
+                //case '\"':
+                //case '/':
+                case '*' : lexer_advance_with(lexer, res, TOKEN_STAR); break;
+                case '+' : lexer_advance_with(lexer, res, TOKEN_PLUS); break;
+                case '-' : lexer_advance_with(lexer, res, TOKEN_MINUS); break;
+                case '=' : lexer_advance_with(lexer, res, TOKEN_EQ); break;
+                case '<' : lexer_advance_with(lexer, res, lexer_check_next(lexer,'-') ? TOKEN_ASSIGN : TOKEN_LT); break;
+                case '>' : lexer_advance_with(lexer, res, TOKEN_GT); break;
+                case ',' : lexer_advance_with(lexer, res, TOKEN_COMMA); break;
+                case ':' : lexer_advance_with(lexer, res, TOKEN_COLON); break;
+                case '(' : lexer_advance_with(lexer, res, TOKEN_LPAREN); break;
+                case ')' : lexer_advance_with(lexer, res, TOKEN_RPAREN); break;
+                case '{' : lexer_advance_with(lexer, res, TOKEN_LBRACKET); break;
+                case '}' : lexer_advance_with(lexer, res, TOKEN_RBRACKET); break;
+                case '[' : lexer_advance_with(lexer, res, TOKEN_LSQBRACKET); break;
+                case ']' : lexer_advance_with(lexer, res, TOKEN_RSQBRACKET); break;
+                default : lexer_advance(lexer); //error trigger
+            }
         }
     }    
     print_token_list(res);

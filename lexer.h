@@ -24,7 +24,6 @@ typedef struct {
 
     char c;
     char line[LINE_MAX];
-    char utf_line[LINE_MAX];
 }Lexer;
 
 TokenList* lexer_scan(void);

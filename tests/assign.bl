@@ -1,0 +1,6 @@
+PROGRAMME Test
+VARIABLES
+    n : Entier
+DÉBUT
+    n <- 0
+FIN
