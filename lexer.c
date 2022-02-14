@@ -186,20 +186,25 @@ int lexer_compare(Lexer* lexer, int start, char* comp)
     return 1;
 }
 
-/*
-void lexer_scan_sting(Lexer* lexer, TokenList* chunk)
-{
-    int i = 0;
-    char buffer[10]
 
-    wh
+void lexer_scan_string(Lexer* lexer, TokenList* chunk)
+{
+    int start;
+
+    lexer_advance(lexer);
+    start = lexer->line_cursor;
+    while (lexer->c != '\"' && lexer->c != EOF)
+        lexer_advance(lexer);
+
+    if (lexer->c != EOF){
+        push_token_str(chunk, TOKEN_STRING, (lexer->line + start), (lexer->line_cursor-start));
+        lexer_advance(lexer);
+    }
 }
-*/
 
 void lexer_scan_id(Lexer* lexer, TokenList* chunk)
 {
     int start = lexer->line_cursor;
-    printf("%c\n",lexer->c);
 
     while (lexer->c == '_' || (lexer->c > 96 && lexer->c < 123))
         lexer_advance(lexer);
@@ -211,7 +216,7 @@ void lexer_scan_id(Lexer* lexer, TokenList* chunk)
         else if (lexer_compare(lexer, start, "variable")) push_token(chunk, TOKEN_VAR);
         else if (lexer_compare(lexer, start, "debut")) push_token(chunk, TOKEN_BEGIN);
         else if (lexer_compare(lexer, start, "fin")) push_token(chunk, TOKEN_END);
-        else push_token(chunk, TOKEN_ID);
+        else push_token_str(chunk, TOKEN_ID, (lexer->line + start), (lexer->line_cursor-start));
     }
 }
 
@@ -229,7 +234,7 @@ TokenList* lexer_scan(void)
             lexer_scan_id(lexer, res);
         } else {
             switch (lexer->c) {
-                //case '\"':
+                case '\"': lexer_scan_string(lexer, res); break;
                 //case '/':
                 case '*' : lexer_advance_with(lexer, res, TOKEN_STAR); break;
                 case '+' : lexer_advance_with(lexer, res, TOKEN_PLUS); break;

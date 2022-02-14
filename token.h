@@ -54,6 +54,8 @@ TokenList* init_token_list();
 
 void push_token(TokenList* chunk, int type);
 
+void push_token_str(TokenList* chunk, int type, char* str, int size);
+
 void print_token_list(TokenList* chunk);
 
 void pop_token_list(TokenList* chunk);

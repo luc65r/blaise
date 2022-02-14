@@ -26,12 +26,29 @@ void push_token(TokenList* chunk, int type)
     chunk->cursor++;
 }
 
+void push_token_str(TokenList* chunk, int type, char* str, int size)
+{
+    if (chunk->cursor == chunk->capacity){
+        chunk->capacity += 16;
+        chunk->list = realloc(chunk->list, chunk->capacity);
+    }
+
+    chunk->list[chunk->cursor].type = type;
+    chunk->list[chunk->cursor].str = calloc(size+1, sizeof(char));
+
+    for (int i = 0; i < size; i++)
+        chunk->list[chunk->cursor].str[i] = str[i];
+    
+    chunk->list[chunk->cursor].str[size] = '\0';
+    chunk->cursor++;
+}
+
 void print_token_list(TokenList* chunk)
 {
     for (int i = 0; i < chunk->cursor; i++) {
         switch (chunk->list[i].type) {
-            case TOKEN_ID : printf("TOKEN_ID\n"); break;
-            case TOKEN_STRING : printf("TOKEN_STRING\n"); break;
+            case TOKEN_ID : printf("TOKEN_ID %s\n", chunk->list[i].str); break;
+            case TOKEN_STRING : printf("TOKEN_STRING %s\n", chunk->list[i].str); break;
             case TOKEN_INT : printf("TOKEN_INT\n"); break;
             case TOKEN_SLASH : printf("TOKEN_SLASH\n"); break;
             case TOKEN_STAR : printf("TOKEN_STAR\n"); break;
