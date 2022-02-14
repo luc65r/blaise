@@ -28,5 +28,4 @@ typedef struct {
 
 TokenList* lexer_scan(void);
 
-
 #endif

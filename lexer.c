@@ -122,7 +122,11 @@ void get_line(Lexer* lexer)
         if (feof(lexer->fs))
             lexer->c = EOF;
     } else {
+  
+
         lexer_normalize_content(lexer->line);
+
+        printf("%s", lexer->line);
 
         lexer->line_nb++;
         lexer->line_cursor = 0;
@@ -144,10 +148,9 @@ Lexer* init_lexer_from_file(FILE *fs)
 
 void lexer_advance(Lexer* lexer)
 {
-    if (lexer->c == '\n')
+    if (lexer->c == '\n') {
         get_line(lexer);
-
-    if (lexer->c != EOF) {
+    } else if (lexer->c != EOF) {
         lexer->line_cursor++;
         lexer->c = lexer->line[lexer->line_cursor];
     }
@@ -176,29 +179,47 @@ int lexer_compare(Lexer* lexer, int start, char* comp)
         return 0;
 
     for (int i = start; i < lexer->line_cursor; i++){
-        if (lexer->line[i] != comp[i+start])
+        if (lexer->line[i] != comp[i-start])
             return 0;
     }
 
-    return 0;
+    return 1;
 }
+
+/*
+void lexer_scan_sting(Lexer* lexer, TokenList* chunk)
+{
+    int i = 0;
+    char buffer[10]
+
+    wh
+}
+*/
 
 void lexer_scan_id(Lexer* lexer, TokenList* chunk)
 {
     int start = lexer->line_cursor;
-    printf("\nmichel\n");
+    printf("%c\n",lexer->c);
 
     while (lexer->c == '_' || (lexer->c > 96 && lexer->c < 123))
         lexer_advance(lexer);
-
-    if (lexer_compare(lexer, start, "programme")) push_token(chunk, TOKEN_PROGRAM);
+    
+    if (lexer->c != EOF) {
+        if (lexer_compare(lexer, start, "programme")) push_token(chunk, TOKEN_PROGRAM);
+        else if (lexer_compare(lexer, start, "fonction")) push_token(chunk, TOKEN_FUNCTION);
+        else if (lexer_compare(lexer, start, "procedure")) push_token(chunk, TOKEN_PROC);
+        else if (lexer_compare(lexer, start, "variable")) push_token(chunk, TOKEN_VAR);
+        else if (lexer_compare(lexer, start, "debut")) push_token(chunk, TOKEN_BEGIN);
+        else if (lexer_compare(lexer, start, "fin")) push_token(chunk, TOKEN_END);
+        else push_token(chunk, TOKEN_ID);
+    }
 }
 
 TokenList* lexer_scan(void)
 {
     TokenList* res = init_token_list();
 
-    FILE* fs = fopen("./test/operations.bl", "r");
+    FILE* fs = fopen("./tests/if.bl", "r");
     Lexer* lexer = init_lexer_from_file(fs);
 
     while (lexer->c != EOF) {
