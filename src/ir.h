@@ -3,16 +3,36 @@
 #include "ast.h"
 #include "map.h"
 
+typedef struct IRExpr IRExpr;
+typedef struct IRVar IRVar;
+typedef struct IRLval IRLval;
+typedef struct IRStmt IRStmt;
+typedef struct IRSub IRSub;
+typedef struct IR IR;
+typedef struct IRIfElse IRIfElse;
+
 typedef enum {
+    IR_TY_VOID,
     IR_TY_INT,
     IR_TY_STR,
     IR_TY_BOOL,
 } IRType;
 
-typedef enum {
+struct IRVar {
     char *name;
-    IRType *ty;
-} IRVar;
+    IRType ty;
+};
+
+typedef enum {
+    IR_LVAL_VAR,
+} IRLvalKind;
+
+struct IRLval {
+    IRLvalKind kind;
+    union {
+        IRVar *var;
+    };
+};
 
 typedef enum {
     IR_INT_ADD,
@@ -31,6 +51,7 @@ typedef enum {
     IR_STR_NEQ,
     IR_BOOL_AND,
     IR_BOOL_OR,
+    IR_DISCARD,
     IR_INT_TO_STR,
     IR_STR_TO_INT,
     IR_BOOL_TO_INT,
@@ -38,15 +59,27 @@ typedef enum {
 } IROperation;
 
 typedef enum {
+    IR_EXPR_INTLIT,
+    IR_EXPR_STRLIT,
+    IR_EXPR_BOOLLIT,
     IR_EXPR_OP,
     IR_EXPR_VAR,
     IR_EXPR_CALL,
 } IRExprKind;
 
-typedef struct {
+struct IRExpr {
     IRExprKind kind;
 
     union {
+        /* IR_EXPR_INTLIT */
+        long intlit;
+
+        /* IR_EXPR_STRLIT */
+        char *strlit;
+
+        /* IR_EXPR_BOOLLIT */
+        bool boollit;
+
         /* IR_EXPR_OP */
         struct {
             IROperation op;
@@ -63,11 +96,9 @@ typedef struct {
             IRExpr **args;
         };
     };
-} IRExpr;
+};
 
-typedef struct IRStmt IRStmt;
-
-typedef struct {
+struct IRIfElse {
     IRExpr *cond;
 
     size_t nstmts_true;
@@ -75,7 +106,7 @@ typedef struct {
 
     size_t nstmts_false;
     IRStmt **stmts_false;
-} IRIfElse;
+};
 
 typedef enum {
     IR_STMT_ASSIGNMENT,
@@ -86,7 +117,7 @@ typedef enum {
 } IRStmtKind;
 
 struct IRStmt {
-    IRStmt kind;
+    IRStmtKind kind;
     union {
         /* IR_STMT_ASSIGNMENT */
         struct {
@@ -106,16 +137,21 @@ struct IRStmt {
     };
 };
 
-typedef struct {
+struct IRSub {
     char *name;
-    Map /* IRVar */ vars;
+
+    size_t nargs;
+    IRVar **args;
+    IRType rty;
+
+    Map /* IRVar */ *vars;
 
     size_t nstmts;
     IRStmt **stmts;
-} IRSub;
+};
 
-typedef struct {
-    Map /* IRSub */ subs;
-} IR;
+struct IR {
+    Map /* IRSub */ *subs;
+};
 
 IR *ast_to_ir(ASTProg *ast);
