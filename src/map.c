@@ -66,3 +66,31 @@ void *map_get(Map *map, char *key) {
     size_t h = hash(key) % CAPACITY;
     return mapl_find(map->buckets[h], key);
 }
+
+MapIterator map_iter(Map *map) {
+    return (MapIterator){
+        .map = map,
+        .h = 0,
+        .node = map->buckets[0],
+    };
+}
+
+bool map_iter_next(MapIterator *iter, char **key, void **value) {
+    struct MapNode *node = iter->node;
+    if (node != NULL)
+        node = node->next;
+
+    while (node == NULL && iter->h < CAPACITY)
+        node = iter->map->buckets[++iter->h];
+
+    iter->node = node;
+    if (node == NULL)
+        return false;
+
+    if (key != NULL)
+        *key = node->key;
+    if (value != NULL)
+        *value = node->value;
+
+    return true;
+}
