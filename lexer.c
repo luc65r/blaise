@@ -186,7 +186,6 @@ int lexer_compare(Lexer* lexer, int start, char* comp)
     return 1;
 }
 
-
 void lexer_scan_string(Lexer* lexer, TokenList* chunk)
 {
     int start;
@@ -226,6 +225,25 @@ void lexer_scan_id(Lexer* lexer, TokenList* chunk)
     }
 }
 
+
+void lexer_scan_num(Lexer* lexer, TokenList* chunk)
+{
+    int temp, res = 0;
+    int start = lexer->line_cursor;
+
+    while (lexer->c > 47 && lexer->c < 58)
+        lexer_advance(lexer);
+    
+    for(int i = start; i < lexer->line_cursor; i++) {
+        temp = lexer->line[i] - '0';
+        for (int j = 0; j < lexer->line_cursor - i -1; j++)
+            temp = temp * 10;
+        res += temp;
+    }
+
+    push_token_num(chunk, TOKEN_INT, res);
+}   
+
 TokenList* lexer_scan(void)
 {
     TokenList* res = init_token_list();
@@ -238,6 +256,8 @@ TokenList* lexer_scan(void)
 
         if (lexer->c == '_' || (lexer->c > 96 && lexer->c < 123)) {
             lexer_scan_id(lexer, res);
+        } else if (lexer->c > 47 && lexer->c < 58) {
+            lexer_scan_num(lexer, res);
         } else {
             switch (lexer->c) {
                 case '\"': lexer_scan_string(lexer, res); break;

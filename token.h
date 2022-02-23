@@ -47,6 +47,7 @@ typedef struct {
     }type;
 
     char* str;
+    int num;
 }Token;
 
 typedef struct
@@ -61,6 +62,8 @@ TokenList* init_token_list();
 void push_token(TokenList* chunk, int type);
 
 void push_token_str(TokenList* chunk, int type, char* str, int size);
+
+void push_token_num(TokenList* chunk, int type, int num);
 
 void print_token_list(TokenList* chunk);
 
