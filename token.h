@@ -20,6 +20,7 @@ typedef struct {
         TOKEN_STAR,
         TOKEN_PLUS,
         TOKEN_MINUS,
+        TOKEN_DIV,
         TOKEN_EQ,
         TOKEN_LT,
         TOKEN_GT,

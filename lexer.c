@@ -221,10 +221,10 @@ void lexer_scan_id(Lexer* lexer, TokenList* chunk)
         else if (lexer_compare(lexer, start, "repeter")) push_token(chunk, TOKEN_REPEAT);
         else if (lexer_compare(lexer, start, "tant")) push_token(chunk, TOKEN_WHILE);
         else if (lexer_compare(lexer, start, "que")) push_token(chunk, TOKEN_THAN);
+        else if (lexer_compare(lexer, start, "div")) push_token(chunk, TOKEN_DIV);
         else push_token_str(chunk, TOKEN_ID, (lexer->line + start), (lexer->line_cursor-start));
     }
 }
-
 
 void lexer_scan_num(Lexer* lexer, TokenList* chunk)
 {
@@ -248,7 +248,7 @@ TokenList* lexer_scan(void)
 {
     TokenList* res = init_token_list();
 
-    FILE* fs = fopen("./tests/ifelse.bl", "r");
+    FILE* fs = fopen("./tests/operations.bl", "r");
     Lexer* lexer = init_lexer_from_file(fs);
 
     while (lexer->c != EOF) {

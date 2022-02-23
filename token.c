@@ -46,7 +46,7 @@ void push_token_str(TokenList* chunk, int type, char* str, int size)
 void push_token_num(TokenList* chunk, int type, int num)
 {
     if (chunk->cursor == chunk->capacity){
-        chunk->capacity += 16 * sizeof(Token);
+        chunk->capacity += 16;
         chunk->list = realloc(chunk->list, chunk->capacity * sizeof(Token));
     }
 
@@ -66,6 +66,7 @@ void print_token_list(TokenList* chunk)
             case TOKEN_STAR : printf("TOKEN_STAR\n"); break;
             case TOKEN_PLUS : printf("TOKEN_PLUS\n"); break;
             case TOKEN_MINUS : printf("TOKEN_MINUS\n"); break;
+            case TOKEN_DIV : printf("TOKEN_DIV\n"); break;
             case TOKEN_EQ : printf("TOKEN_EQ\n"); break;
             case TOKEN_LT : printf("TOKEN_LT\n"); break;
             case TOKEN_GT : printf("TOKEN_GT\n"); break;
