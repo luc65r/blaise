@@ -38,6 +38,12 @@ typedef struct {
         TOKEN_VAR,
         TOKEN_BEGIN,
         TOKEN_END,
+        TOKEN_IF,
+        TOKEN_ELSE,
+        TOKEN_THEN,
+        TOKEN_REPEAT,
+        TOKEN_WHILE,
+        TOKEN_THAN,
     }type;
 
     char* str;

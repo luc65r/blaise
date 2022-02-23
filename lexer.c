@@ -216,6 +216,12 @@ void lexer_scan_id(Lexer* lexer, TokenList* chunk)
         else if (lexer_compare(lexer, start, "variable")) push_token(chunk, TOKEN_VAR);
         else if (lexer_compare(lexer, start, "debut")) push_token(chunk, TOKEN_BEGIN);
         else if (lexer_compare(lexer, start, "fin")) push_token(chunk, TOKEN_END);
+        else if (lexer_compare(lexer, start, "si")) push_token(chunk, TOKEN_IF);
+        else if (lexer_compare(lexer, start, "sinon")) push_token(chunk, TOKEN_ELSE);
+        else if (lexer_compare(lexer, start, "alors")) push_token(chunk, TOKEN_THEN);
+        else if (lexer_compare(lexer, start, "repeter")) push_token(chunk, TOKEN_REPEAT);
+        else if (lexer_compare(lexer, start, "tant")) push_token(chunk, TOKEN_WHILE);
+        else if (lexer_compare(lexer, start, "que")) push_token(chunk, TOKEN_THAN);
         else push_token_str(chunk, TOKEN_ID, (lexer->line + start), (lexer->line_cursor-start));
     }
 }

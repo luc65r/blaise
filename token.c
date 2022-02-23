@@ -29,7 +29,7 @@ void push_token(TokenList* chunk, int type)
 void push_token_str(TokenList* chunk, int type, char* str, int size)
 {
     if (chunk->cursor == chunk->capacity){
-        chunk->capacity += 16;
+        chunk->capacity += 16 * sizeof(Token);
         chunk->list = realloc(chunk->list, chunk->capacity);
     }
 
@@ -71,7 +71,13 @@ void print_token_list(TokenList* chunk)
             case TOKEN_PROC : printf("TOKEN_PROC\n"); break;
             case TOKEN_VAR : printf("TOKEN_VAR\n"); break;
             case TOKEN_BEGIN : printf("TOKEN_BEGIN\n"); break;
-            case TOKEN_END : printf("TOKEN_END\n"); break; 
+            case TOKEN_END : printf("TOKEN_END\n"); break;
+            case TOKEN_IF : printf("TOKEN_IF\n"); break;
+            case TOKEN_ELSE : printf("TOKEN_ELSE\n"); break;
+            case TOKEN_THEN : printf("TOKEN_THEN\n"); break;
+            case TOKEN_REPEAT : printf("TOKEN_REPEAT\n"); break;
+            case TOKEN_WHILE : printf("TOKEN_WHILE\n"); break;
+            case TOKEN_THAN : printf("TOKEN_THAN\n"); break;
             default: printf("UNKOWN_TOKEN\n"); break; // error triger
         }
 
