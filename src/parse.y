@@ -45,6 +45,7 @@ void yyerror(const char *s);
 %define api.token.prefix {TOKEN_}
 %define api.location.type {ASTLoc}
 
+%define parse.trace
 %define parse.error detailed
 %locations
 

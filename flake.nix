@@ -10,7 +10,10 @@
       devShell = pkgs.mkShell {
         nativeBuildInputs = with pkgs; [
           gdb
+          meson
+          ninja
           flex
+          pkg-config
           bison
           libunistring
           gmp
