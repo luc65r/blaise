@@ -12,6 +12,7 @@ ygen = generator(bison,
 srcs += files(
   'ast_free.c',
   'ast_json.c',
+  'ir.c',
   'eval.c',
   'main.c',
   'map.c',
