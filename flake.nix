@@ -18,6 +18,7 @@
           libunistring
           gmp
           jansson
+          llvmPackages_13.llvm
           valgrind
           ccls
         ];
