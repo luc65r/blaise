@@ -122,11 +122,9 @@ void get_line(Lexer* lexer)
         if (feof(lexer->fs))
             lexer->c = EOF;
     } else {
-  
-
         lexer_normalize_content(lexer->line);
 
-        printf("%s", lexer->line);
+        // printf("%s", lexer->line);
 
         lexer->line_nb++;
         lexer->line_cursor = 0;
@@ -148,12 +146,14 @@ Lexer* init_lexer_from_file(FILE *fs)
 
 void lexer_advance(Lexer* lexer)
 {
-    if (lexer->c == '\n') {
+    if (lexer->c == '\n' || lexer->c == '\0') {
         get_line(lexer);
     } else if (lexer->c != EOF) {
         lexer->line_cursor++;
         lexer->c = lexer->line[lexer->line_cursor];
     }
+
+    printf("%c %d\n", lexer->c, lexer->c);
 }
 
 void lexer_skip_whitespace(Lexer* lexer)
@@ -248,7 +248,7 @@ TokenList* lexer_scan(void)
 {
     TokenList* res = init_token_list();
 
-    FILE* fs = fopen("./tests/operations.bl", "r");
+    FILE* fs = fopen("./tests/assign.bl", "r");
     Lexer* lexer = init_lexer_from_file(fs);
 
     while (lexer->c != EOF) {
@@ -266,7 +266,11 @@ TokenList* lexer_scan(void)
                 case '+' : lexer_advance_with(lexer, res, TOKEN_PLUS); break;
                 case '-' : lexer_advance_with(lexer, res, TOKEN_MINUS); break;
                 case '=' : lexer_advance_with(lexer, res, TOKEN_EQ); break;
-                case '<' : lexer_advance_with(lexer, res, lexer_check_next(lexer,'-') ? TOKEN_ASSIGN : TOKEN_LT); break;
+                case '<' : 
+                    if (lexer_check_next(lexer,'-')) {
+                        lexer_advance_with(lexer, res, TOKEN_ASSIGN);
+                        lexer_advance(lexer);
+                    } else lexer_advance_with(lexer, res, TOKEN_LT); break;
                 case '>' : lexer_advance_with(lexer, res, TOKEN_GT); break;
                 case ',' : lexer_advance_with(lexer, res, TOKEN_COMMA); break;
                 case ':' : lexer_advance_with(lexer, res, TOKEN_COLON); break;
