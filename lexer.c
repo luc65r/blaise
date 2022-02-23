@@ -248,12 +248,12 @@ TokenList* lexer_scan(void)
 {
     TokenList* res = init_token_list();
 
-    FILE* fs = fopen("./tests/if.bl", "r");
+    FILE* fs = fopen("./tests/ifelse.bl", "r");
     Lexer* lexer = init_lexer_from_file(fs);
 
     while (lexer->c != EOF) {
         lexer_skip_whitespace(lexer);
-
+        
         if (lexer->c == '_' || (lexer->c > 96 && lexer->c < 123)) {
             lexer_scan_id(lexer, res);
         } else if (lexer->c > 47 && lexer->c < 58) {

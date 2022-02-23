@@ -18,8 +18,8 @@ TokenList* init_token_list()
 void push_token(TokenList* chunk, int type)
 {
     if (chunk->cursor == chunk->capacity){
-        chunk->capacity += 16 * sizeof(Token);
-        chunk->list = realloc(chunk->list, chunk->capacity);
+        chunk->capacity += 16;
+        chunk->list = realloc(chunk->list, chunk->capacity * sizeof(Token));
     }
 
     chunk->list[chunk->cursor].type = type;
@@ -29,8 +29,8 @@ void push_token(TokenList* chunk, int type)
 void push_token_str(TokenList* chunk, int type, char* str, int size)
 {
     if (chunk->cursor == chunk->capacity){
-        chunk->capacity += 16 * sizeof(Token);
-        chunk->list = realloc(chunk->list, chunk->capacity);
+        chunk->capacity += 16;
+        chunk->list = realloc(chunk->list, chunk->capacity * sizeof(Token));
     }
 
     chunk->list[chunk->cursor].type = type;
@@ -47,7 +47,7 @@ void push_token_num(TokenList* chunk, int type, int num)
 {
     if (chunk->cursor == chunk->capacity){
         chunk->capacity += 16 * sizeof(Token);
-        chunk->list = realloc(chunk->list, chunk->capacity);
+        chunk->list = realloc(chunk->list, chunk->capacity * sizeof(Token));
     }
 
     chunk->list[chunk->cursor].type = type;
