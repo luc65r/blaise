@@ -1,5 +1,7 @@
 #pragma once
 
+#define AST_H
+
 #include <gmp.h>
 #include <jansson.h>
 #include <stdbool.h>

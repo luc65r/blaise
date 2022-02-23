@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ast.h"
 #include "map.h"
 
 typedef struct IRExpr IRExpr;
@@ -154,4 +153,6 @@ struct IR {
     Map /* IRSub */ *subs;
 };
 
+#ifdef AST_H
 IR *ast_to_ir(ASTProg *ast);
+#endif
