@@ -1,0 +1,70 @@
+{
+  "loc": "1,1-8,4",
+  "name": "Test",
+  "subs": [],
+  "vars": [],
+  "stmts": [
+    {
+      "loc": "3,5-3,128",
+      "expr": {
+        "loc": "3,5-3,128",
+        "subname": "écrire",
+        "args": [
+          {
+            "loc": "3,117-3,127",
+            "strlit": "avant Si"
+          }
+        ]
+      }
+    },
+    {
+      "loc": "4,5-6,11",
+      "if": {
+        "loc": "4,5-6,11",
+        "cond": {
+          "loc": "4,8-4,13",
+          "binexpr": {
+            "loc": "4,8-4,13",
+            "op": ">",
+            "left": {
+              "loc": "4,8-4,9",
+              "intlit": "3"
+            },
+            "right": {
+              "loc": "4,12-4,13",
+              "intlit": "2"
+            }
+          }
+        },
+        "stmts": [
+          {
+            "loc": "5,9-5,110",
+            "expr": {
+              "loc": "5,9-5,110",
+              "subname": "écrire",
+              "args": [
+                {
+                  "loc": "5,100-5,109",
+                  "strlit": "dans Si"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "loc": "7,5-7,152",
+      "expr": {
+        "loc": "7,5-7,152",
+        "subname": "écrire",
+        "args": [
+          {
+            "loc": "7,140-7,151",
+            "strlit": "après Si"
+          }
+        ]
+      }
+    }
+  ]
+}

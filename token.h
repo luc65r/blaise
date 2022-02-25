@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <gmp.h>
+
+#include "error.h"
 
 typedef struct {
     enum {
@@ -45,10 +48,15 @@ typedef struct {
         TOKEN_REPEAT,
         TOKEN_WHILE,
         TOKEN_THAN,
+        TOKEN_EOF,
     }type;
 
-    char* str;
-    int num;
+    union {
+        char* str;
+        mpz_t num;
+    };
+
+    Loc loc;
 }Token;
 
 typedef struct
@@ -60,11 +68,13 @@ typedef struct
 
 TokenList* init_token_list();
 
-void push_token(TokenList* chunk, int type);
+void push_token(TokenList* chunk, int type, Loc loc);
 
-void push_token_str(TokenList* chunk, int type, char* str, int size);
+void push_token_str(TokenList* chunk, int type, char* str, int size, Loc loc);
 
-void push_token_num(TokenList* chunk, int type, int num);
+void push_token_num(TokenList* chunk, int type, mpz_t num);
+
+void print_token(Token t);
 
 void print_token_list(TokenList* chunk);
 

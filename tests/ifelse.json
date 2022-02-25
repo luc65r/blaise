@@ -1,0 +1,121 @@
+{
+  "loc": "1,1-12,4",
+  "name": "Test",
+  "subs": [],
+  "vars": [],
+  "stmts": [
+    {
+      "loc": "3,5-3,128",
+      "expr": {
+        "loc": "3,5-3,128",
+        "subname": "écrire",
+        "args": [
+          {
+            "loc": "3,117-3,127",
+            "strlit": "avant Si"
+          }
+        ]
+      }
+    },
+    {
+      "loc": "4,5-10,11",
+      "if": {
+        "loc": "4,5-10,11",
+        "cond": {
+          "loc": "4,8-4,13",
+          "binexpr": {
+            "loc": "4,8-4,13",
+            "op": ">",
+            "left": {
+              "loc": "4,8-4,9",
+              "intlit": "2"
+            },
+            "right": {
+              "loc": "4,12-4,13",
+              "intlit": "3"
+            }
+          }
+        },
+        "stmts": [
+          {
+            "loc": "5,9-5,110",
+            "expr": {
+              "loc": "5,9-5,110",
+              "subname": "écrire",
+              "args": [
+                {
+                  "loc": "5,100-5,109",
+                  "strlit": "dans Si"
+                }
+              ]
+            }
+          }
+        ],
+        "else": {
+          "loc": "6,11-10,11",
+          "cond": {
+            "loc": "6,14-6,19",
+            "binexpr": {
+              "loc": "6,14-6,19",
+              "op": ">",
+              "left": {
+                "loc": "6,14-6,15",
+                "intlit": "3"
+              },
+              "right": {
+                "loc": "6,18-6,19",
+                "intlit": "3"
+              }
+            }
+          },
+          "stmts": [
+            {
+              "loc": "7,9-7,116",
+              "expr": {
+                "loc": "7,9-7,116",
+                "subname": "écrire",
+                "args": [
+                  {
+                    "loc": "7,100-7,115",
+                    "strlit": "dans Sinon Si"
+                  }
+                ]
+              }
+            }
+          ],
+          "else": {
+            "loc": "8,5-10,11",
+            "stmts": [
+              {
+                "loc": "9,9-9,113",
+                "expr": {
+                  "loc": "9,9-9,113",
+                  "subname": "écrire",
+                  "args": [
+                    {
+                      "loc": "9,100-9,112",
+                      "strlit": "dans Sinon"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "loc": "11,5-11,152",
+      "expr": {
+        "loc": "11,5-11,152",
+        "subname": "écrire",
+        "args": [
+          {
+            "loc": "11,140-11,151",
+            "strlit": "après Si"
+          }
+        ]
+      }
+    }
+  ]
+}

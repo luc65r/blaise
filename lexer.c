@@ -118,7 +118,7 @@ void lexer_normalize_content(char* str)
 
 void get_line(Lexer* lexer)
 {
-    if (fgets(lexer->line, LINE_MAX, lexer->fs) == NULL) {
+    if (fgets(lexer->line, MAX_LINE_SIZE, lexer->fs) == NULL) {
         if (feof(lexer->fs))
             lexer->c = EOF;
     } else {
@@ -152,8 +152,6 @@ void lexer_advance(Lexer* lexer)
         lexer->line_cursor++;
         lexer->c = lexer->line[lexer->line_cursor];
     }
-
-    printf("%c %d\n", lexer->c, lexer->c);
 }
 
 void lexer_skip_whitespace(Lexer* lexer)
@@ -169,7 +167,7 @@ int lexer_check_next(Lexer* lexer, char c)
 
 void lexer_advance_with(Lexer* lexer, TokenList* chunk, int type)
 {
-    push_token(chunk, type);
+    push_token(chunk, type, (Loc) {lexer->line_nb, lexer->line_cursor+1, lexer->line_nb, lexer->line_cursor+1});
     lexer_advance(lexer);
 }
 
@@ -189,6 +187,7 @@ int lexer_compare(Lexer* lexer, int start, char* comp)
 void lexer_scan_string(Lexer* lexer, TokenList* chunk)
 {
     int start;
+    int line_start = lexer->line_nb;
 
     lexer_advance(lexer);
     start = lexer->line_cursor;
@@ -196,7 +195,7 @@ void lexer_scan_string(Lexer* lexer, TokenList* chunk)
         lexer_advance(lexer);
 
     if (lexer->c != EOF){
-        push_token_str(chunk, TOKEN_STRING, (lexer->line + start), (lexer->line_cursor-start));
+        push_token_str(chunk, TOKEN_STRING, (lexer->line + start), (lexer->line_cursor-start), (Loc) {line_start, start, lexer->line_nb, lexer->line_cursor+2});
         lexer_advance(lexer);
     }
 }
@@ -204,51 +203,56 @@ void lexer_scan_string(Lexer* lexer, TokenList* chunk)
 void lexer_scan_id(Lexer* lexer, TokenList* chunk)
 {
     int start = lexer->line_cursor;
+    int line_start = lexer->line_nb;
 
     while (lexer->c == '_' || (lexer->c > 96 && lexer->c < 123))
         lexer_advance(lexer);
     
     if (lexer->c != EOF) {
-        if (lexer_compare(lexer, start, "programme")) push_token(chunk, TOKEN_PROGRAM);
-        else if (lexer_compare(lexer, start, "fonction")) push_token(chunk, TOKEN_FUNCTION);
-        else if (lexer_compare(lexer, start, "procedure")) push_token(chunk, TOKEN_PROC);
-        else if (lexer_compare(lexer, start, "variable")) push_token(chunk, TOKEN_VAR);
-        else if (lexer_compare(lexer, start, "debut")) push_token(chunk, TOKEN_BEGIN);
-        else if (lexer_compare(lexer, start, "fin")) push_token(chunk, TOKEN_END);
-        else if (lexer_compare(lexer, start, "si")) push_token(chunk, TOKEN_IF);
-        else if (lexer_compare(lexer, start, "sinon")) push_token(chunk, TOKEN_ELSE);
-        else if (lexer_compare(lexer, start, "alors")) push_token(chunk, TOKEN_THEN);
-        else if (lexer_compare(lexer, start, "repeter")) push_token(chunk, TOKEN_REPEAT);
-        else if (lexer_compare(lexer, start, "tant")) push_token(chunk, TOKEN_WHILE);
-        else if (lexer_compare(lexer, start, "que")) push_token(chunk, TOKEN_THAN);
-        else if (lexer_compare(lexer, start, "div")) push_token(chunk, TOKEN_DIV);
-        else push_token_str(chunk, TOKEN_ID, (lexer->line + start), (lexer->line_cursor-start));
+        if (lexer_compare(lexer, start, "programme")) push_token(chunk, TOKEN_PROGRAM, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "fonction")) push_token(chunk, TOKEN_FUNCTION, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "procedure")) push_token(chunk, TOKEN_PROC, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "variables")) push_token(chunk, TOKEN_VAR, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "debut")) push_token(chunk, TOKEN_BEGIN, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "fin")) push_token(chunk, TOKEN_END, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "si")) push_token(chunk, TOKEN_IF, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "sinon")) push_token(chunk, TOKEN_ELSE, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "alors")) push_token(chunk, TOKEN_THEN, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "repeter")) push_token(chunk, TOKEN_REPEAT, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "tant")) push_token(chunk, TOKEN_WHILE, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "que")) push_token(chunk, TOKEN_THAN, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else if (lexer_compare(lexer, start, "div")) push_token(chunk, TOKEN_DIV, (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
+        else push_token_str(chunk, TOKEN_ID, (lexer->line + start), (lexer->line_cursor-start), (Loc) {line_start, start+1, lexer->line_nb, lexer->line_cursor+1});
     }
 }
 
 void lexer_scan_num(Lexer* lexer, TokenList* chunk)
 {
-    int temp, res = 0;
+    char* str;
+    mpz_t res;
     int start = lexer->line_cursor;
 
     while (lexer->c > 47 && lexer->c < 58)
         lexer_advance(lexer);
-    
-    for(int i = start; i < lexer->line_cursor; i++) {
-        temp = lexer->line[i] - '0';
-        for (int j = 0; j < lexer->line_cursor - i -1; j++)
-            temp = temp * 10;
-        res += temp;
-    }
-
+  
     push_token_num(chunk, TOKEN_INT, res);
-}   
+}
+
+void lexer_scan_lt(Lexer* lexer, TokenList* chunk)
+{
+    if (lexer_check_next(lexer,'-')) {
+        push_token(chunk, TOKEN_ASSIGN, (Loc) {lexer->line_nb, lexer->line_cursor+1, lexer->line_nb, lexer->line_cursor+2});
+        lexer_advance(lexer);
+        lexer_advance(lexer);
+    } else 
+        lexer_advance_with(lexer, chunk, TOKEN_LT);
+}
 
 TokenList* lexer_scan(void)
 {
     TokenList* res = init_token_list();
 
-    FILE* fs = fopen("./tests/assign.bl", "r");
+    FILE* fs = fopen("../tests/operations.bl", "r");
     Lexer* lexer = init_lexer_from_file(fs);
 
     while (lexer->c != EOF) {
@@ -266,11 +270,7 @@ TokenList* lexer_scan(void)
                 case '+' : lexer_advance_with(lexer, res, TOKEN_PLUS); break;
                 case '-' : lexer_advance_with(lexer, res, TOKEN_MINUS); break;
                 case '=' : lexer_advance_with(lexer, res, TOKEN_EQ); break;
-                case '<' : 
-                    if (lexer_check_next(lexer,'-')) {
-                        lexer_advance_with(lexer, res, TOKEN_ASSIGN);
-                        lexer_advance(lexer);
-                    } else lexer_advance_with(lexer, res, TOKEN_LT); break;
+                case '<' : lexer_scan_lt(lexer, res); break;
                 case '>' : lexer_advance_with(lexer, res, TOKEN_GT); break;
                 case ',' : lexer_advance_with(lexer, res, TOKEN_COMMA); break;
                 case ':' : lexer_advance_with(lexer, res, TOKEN_COLON); break;
@@ -283,7 +283,8 @@ TokenList* lexer_scan(void)
                 default : lexer_advance(lexer); //error trigger
             }
         }
-    }    
+    }
+    push_token(res, TOKEN_EOF, (Loc) {lexer->line_nb, lexer->line_cursor+1, lexer->line_nb, lexer->line_cursor+1});
     print_token_list(res);
 
     return res;

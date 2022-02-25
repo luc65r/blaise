@@ -9,12 +9,12 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 #include <stdlib.h>
+#include <gmp.h>
 
 #include "token.h"
 
-#define LINE_MAX 1024
+#define MAX_LINE_SIZE 1024
 
 typedef struct {
     FILE* fs;
@@ -23,7 +23,7 @@ typedef struct {
     int line_cursor;
 
     char c;
-    char line[LINE_MAX];
+    char line[MAX_LINE_SIZE];
 }Lexer;
 
 TokenList* lexer_scan(void);
