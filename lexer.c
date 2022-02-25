@@ -252,7 +252,7 @@ TokenList* lexer_scan(void)
 {
     TokenList* res = init_token_list();
 
-    FILE* fs = fopen("../tests/operations.bl", "r");
+    FILE* fs = fopen("./tests/if.bl", "r");
     Lexer* lexer = init_lexer_from_file(fs);
 
     while (lexer->c != EOF) {

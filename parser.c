@@ -95,18 +95,68 @@ void parse_var(ASTVarDecl** vars, size_t* num, Parser* parser)
     }
 }
 
+void parse_call(ASTExpr* expr, Parser* parser)
+{
+    expr->kind = AST_EXPR_CALL;
+    expr->subname = cpystr(parser->t.str);
+    expr->loc.sl = parser->t.loc.sl;
+    expr->loc.sc = parser->t.loc.sc;
+    parser_advance(parser);
+    parser_advance(parser);
+
+    expr->nargs = 0;
+    parser_advance(parser);
+    parser_advance(parser);
+}
+
+
+void parse_if(ASTIfElseBlock* block, Parser* parser)
+{
+    while (parser->t.type != TOKEN_THEN)
+        parser_advance(parser);
+    parser_advance(parser);
+    block->stmts = malloc(sizeof(ASTStmt*));
+    *(block->stmts) = malloc(sizeof(ASTStmt));
+    block->nstmts = 1;
+    parse_stmt(block->stmts, &(block->nstmts), parser);
+
+    if(parser->t.type == TOKEN_END && parser_check_next(parser, 1, TOKEN_IF)) {
+        parser_advance(parser);
+        block->loc.el = parser->t.loc.el;
+        block->loc.ec = parser->t.loc.ec;
+        parser_advance(parser);
+    }
+}
+
 void parse_stmt(ASTStmt** stmts, size_t* num, Parser* parser)
 {
     int cursor = 0;
 
-    while (parser->t.type != TOKEN_END) {
+    while (parser->t.type != TOKEN_END && parser->t.type != TOKEN_ELSE) {
         if (cursor == *num) {
             (*num)++;
             stmts = realloc(stmts, (*num)*sizeof(ASTStmt*));
             stmts[cursor] = malloc(sizeof(ASTStmt));
         }
 
-        cursor++;
+        if(parser->t.type == TOKEN_ID) {
+            if (parser_check_next(parser, 1, TOKEN_LPAREN)) {
+                stmts[cursor]->kind = AST_STMT_EXPR;
+                stmts[cursor]->expr = malloc(sizeof(ASTExpr));
+                parse_call(stmts[cursor]->expr, parser);
+                cursor++;
+            }
+        } else if(parser->t.type == TOKEN_IF) {
+            stmts[cursor]->kind = AST_STMT_IF;
+            stmts[cursor]->ifb = malloc(sizeof(ASTIfElseBlock));
+            stmts[cursor]->ifb->loc.sl = parser->t.loc.sl;
+            stmts[cursor]->ifb->loc.sc = parser->t.loc.sc;
+            parser_advance(parser);
+            parse_if(stmts[cursor]->ifb, parser);
+            cursor++;
+        } else {
+            parser_advance(parser);
+        }
     }
     
     if (cursor == 0) {
@@ -127,6 +177,13 @@ void parse_program(ASTProg* prog, Parser* parser)
         parse_var(prog->vars, &(prog->nvars), parser);
     }
 
+    if (parser->t.type == TOKEN_BEGIN) {
+        parser_advance(parser);
+        prog->stmts = malloc(sizeof(ASTStmt*));
+        *(prog->stmts) = malloc(sizeof(ASTStmt));
+        prog->nstmts = 1;
+        parse_stmt(prog->stmts, &(prog->nstmts), parser);
+    }
 }
 
 ASTProg* parse(TokenList* list)
